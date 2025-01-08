@@ -9,7 +9,7 @@ import Foundation
 import UIKit
 import SnapKit
 class SetAlarmViewController: UIViewController {
-    let settingView = SettingView()
+    let settingView = SettingMainView()
     
     override func loadView() {
         view = settingView
@@ -18,3 +18,8 @@ class SetAlarmViewController: UIViewController {
     }
 }
 
+
+@available(iOS 17.0, *)
+#Preview {
+    SetAlarmViewController()
+}
