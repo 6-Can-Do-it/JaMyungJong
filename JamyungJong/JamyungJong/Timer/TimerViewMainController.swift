@@ -37,7 +37,7 @@ final class TimerViewMainController: UIViewController {
             target: nil,
             action: nil
         )
-        editButton.setTitleTextAttributes([.foregroundColor: SubColor.dogerBlue1], for: .normal)
+        editButton.setTitleTextAttributes([.foregroundColor: SubColor.dogerBlue], for: .normal)
         navigationItem.title = "편집"
         navigationItem.leftBarButtonItem = editButton
     }

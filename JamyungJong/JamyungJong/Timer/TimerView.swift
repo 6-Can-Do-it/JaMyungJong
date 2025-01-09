@@ -38,7 +38,7 @@ final class TimerView: UIView {
         let button = UIButton(type: .system)
         button.setTitle("시작", for: .normal)
         button.titleLabel?.font = UIFont.systemFont(ofSize: 18, weight: .medium)
-        button.backgroundColor = SubColor.dogerBlue1
+        button.backgroundColor = SubColor.dogerBlue
         button.tintColor = MainColor.aliceColor
         button.layer.cornerRadius = 40
         return button
@@ -71,7 +71,7 @@ final class TimerView: UIView {
         let textField = UITextField()
         textField.text = "타이머"
         textField.backgroundColor = .clear
-        textField.textColor = MainColor.staleSkyColor
+        textField.textColor = SubColor.darkTurquoisePoint
         textField.textAlignment = .right
         return textField
     }()
@@ -86,7 +86,7 @@ final class TimerView: UIView {
     private let value2: UIButton = {
         var configuration = UIButton.Configuration.plain()
         configuration.title = "은하수"
-        configuration.baseForegroundColor = MainColor.staleSkyColor
+        configuration.baseForegroundColor = SubColor.darkTurquoisePoint
         configuration.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
         configuration.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
             var attributes = incoming

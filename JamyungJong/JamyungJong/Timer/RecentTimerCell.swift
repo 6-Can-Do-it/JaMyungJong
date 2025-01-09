@@ -28,7 +28,7 @@ final class RecentTimerCell: UITableViewCell {
     let playButton: UIButton = {
         let button = UIButton()
         button.setImage(UIImage(systemName: "play.fill"), for: .normal)
-        button.backgroundColor = SubColor.dogerBlue1
+        button.backgroundColor = SubColor.dogerBlue
         button.tintColor = MainColor.aliceColor
         button.layer.cornerRadius = 30
         return button
