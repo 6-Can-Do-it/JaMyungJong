@@ -1,5 +1,5 @@
 //
-//  Untitled.swift
+//  TimerView.swift
 //  JamyungJong
 //
 //  Created by 황석범 on 1/8/25.
@@ -8,7 +8,7 @@
 import UIKit
 import SnapKit
 
-final class TimerViewController: UIViewController {
+final class TimerViewMainController: UIViewController {
     
     private let timerView = TimerView()
     private var recentTimers: [(hours: Int, minutes: Int, seconds: Int)] = []
@@ -77,7 +77,11 @@ final class TimerViewController: UIViewController {
         
         isTimerRunning = true
         
-        // 타이머 시작
+        let detailsVC = TimerDetailsViewController()
+        detailsVC.recentTimers = recentTimers
+        detailsVC.selectedTime = selectedTime
+        navigationController?.pushViewController(detailsVC, animated: false)
+        
         startCountdown()
     }
     
@@ -106,7 +110,7 @@ final class TimerViewController: UIViewController {
     }
 }
 
-extension TimerViewController: UIPickerViewDataSource, UIPickerViewDelegate {
+extension TimerViewMainController: UIPickerViewDataSource, UIPickerViewDelegate {
     func numberOfComponents(in pickerView: UIPickerView) -> Int {
         return 3
     }
@@ -135,7 +139,7 @@ extension TimerViewController: UIPickerViewDataSource, UIPickerViewDelegate {
     }
 }
 
-extension TimerViewController: UITableViewDataSource, UITableViewDelegate {
+extension TimerViewMainController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return recentTimers.count
     }
@@ -143,17 +147,36 @@ extension TimerViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "RecentTimerCell", for: indexPath) as! RecentTimerCell
         let timer = recentTimers[indexPath.row]
-        cell.mainLabel.text = String(format: "%02d:%02d", timer.hours, timer.minutes)
-        cell.subLabel.text = "\(timer.minutes)분"
+        cell.mainLabel.text = String(format: "%d:%02d:%02d", timer.hours, timer.minutes, timer.seconds)
+        cell.subLabel.text = "\(timer.hours)시간 \(timer.minutes)분 \(timer.seconds)초"
         cell.playButton.tag = indexPath.row
         cell.playButton.addAction(UIAction { [weak self] _ in
             let selectedTimer = self?.recentTimers[cell.playButton.tag]
             self?.selectedTime = selectedTimer!
-            self?.timerView.timePicker.selectRow(selectedTimer!.hours, inComponent: 0, animated: true)
-            self?.timerView.timePicker.selectRow(selectedTimer!.minutes, inComponent: 1, animated: true)
-            self?.timerView.timePicker.selectRow(selectedTimer!.seconds, inComponent: 2, animated: true)
             self?.startTapped()
         }, for: .touchUpInside)
         return cell
+    }
+    
+    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+        guard !recentTimers.isEmpty else { return nil }
+        return createHeaderView(title: "최근 항목")
+    }
+    
+    private func createHeaderView(title: String) -> UIView {
+        let headerView = UIView()
+        headerView.backgroundColor = .clear
+        let label = UILabel()
+        label.text = "최근 항목"
+        label.font = UIFont.boldSystemFont(ofSize: 24)
+        label.textColor = MainColor.aliceColor
+        
+        headerView.addSubview(label)
+        label.snp.makeConstraints { make in
+            make.leading.equalToSuperview()
+            make.centerY.equalToSuperview()
+        }
+        
+        return headerView
     }
 }
