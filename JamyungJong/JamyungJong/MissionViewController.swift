@@ -7,7 +7,7 @@
 
 import Foundation
 import UIKit
-import UIKit
+import SnapKit
 
 class MissionViewController: UIViewController {
     private let progressLabel = UILabel() // Progress (1/3)
@@ -23,7 +23,64 @@ class MissionViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = .blue
-        
+        setupUI()
+    }
+    private func setupUI() {
+        view.backgroundColor = .black
+
+        // Back Button
+        backButton.setTitle("<", for: .normal)
+        backButton.setTitleColor(.white, for: .normal)
+        view.addSubview(backButton)
+        backButton.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide).offset(10)
+            make.left.equalToSuperview().offset(10)
+            make.width.height.equalTo(40)
+        }
+
+        // Progress Label
+        progressLabel.textColor = .white
+        progressLabel.font = .systemFont(ofSize: 16, weight: .medium)
+        progressLabel.textAlignment = .center
+        view.addSubview(progressLabel)
+        progressLabel.snp.makeConstraints { make in
+            make.centerX.equalToSuperview()
+            make.centerY.equalTo(backButton)
+        }
+
+        // Question Label
+        questionLabel.textColor = .white
+        questionLabel.font = .boldSystemFont(ofSize: 32)
+        questionLabel.textAlignment = .center
+        view.addSubview(questionLabel)
+        questionLabel.snp.makeConstraints { make in
+            make.top.equalTo(progressLabel.snp.bottom).offset(20)
+            make.centerX.equalToSuperview()
+        }
+
+        // Input Label
+        inputLabel.textColor = .white
+        inputLabel.font = .boldSystemFont(ofSize: 28)
+        inputLabel.textAlignment = .center
+        inputLabel.backgroundColor = .darkGray
+        inputLabel.layer.cornerRadius = 8
+        inputLabel.clipsToBounds = true
+        view.addSubview(inputLabel)
+        inputLabel.snp.makeConstraints { make in
+            make.top.equalTo(questionLabel.snp.bottom).offset(20)
+            make.centerX.equalToSuperview()
+            make.width.equalTo(100)
+            make.height.equalTo(50)
+        }
+
+        // Button Container
+        view.addSubview(buttonContainer)
+        buttonContainer.snp.makeConstraints { make in
+            make.top.equalTo(inputLabel.snp.bottom).offset(20)
+            make.left.right.equalToSuperview().inset(20)
+            make.height.equalTo(400) // 컨테이너 높이 확장
+        }
+
+       
     }
 }
