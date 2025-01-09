@@ -5,8 +5,8 @@
 //  Created by 황석범 on 1/8/25.
 //
 
+import QuartzCore
 import UIKit
-import SnapKit
 
 final class TimerCell: UITableViewCell {
     
@@ -27,19 +27,20 @@ final class TimerCell: UITableViewCell {
     
     private let progressContainerView: UIView = {
         let view = UIView()
-        view.backgroundColor = SubColor.dogerBlue1
+        view.backgroundColor = SubColor.dogerBlue
         view.layer.cornerRadius = 30
         view.clipsToBounds = true
         return view
     }()
     
-    private let progressView: UIProgressView = {
-        let progress = UIProgressView(progressViewStyle: .default)
-        progress.progressTintColor = MainColor.aliceColor
-        progress.trackTintColor = .clear
-        progress.layer.cornerRadius = 10
-        progress.clipsToBounds = true
-        return progress
+    private let circularProgressLayer: CAShapeLayer = {
+        let shapeLayer = CAShapeLayer()
+        shapeLayer.lineWidth = 6
+        shapeLayer.fillColor = UIColor.clear.cgColor
+        shapeLayer.strokeColor = MainColor.aliceColor.cgColor
+        shapeLayer.lineCap = .round
+        shapeLayer.strokeEnd = 0 // 초기 진행 상태
+        return shapeLayer
     }()
     
     private let playButton: UIButton = {
@@ -60,6 +61,7 @@ final class TimerCell: UITableViewCell {
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         setupLayout()
+        setupCircularProgressLayer()
     }
     
     required init?(coder: NSCoder) {
@@ -72,7 +74,6 @@ final class TimerCell: UITableViewCell {
         
         // UI 구성
         [mainLabel, subLabel, progressContainerView, separatorView].forEach { contentView.addSubview($0) }
-        progressContainerView.addSubview(progressView)
         progressContainerView.addSubview(playButton)
         
         mainLabel.snp.makeConstraints { make in
@@ -91,11 +92,6 @@ final class TimerCell: UITableViewCell {
             make.width.height.equalTo(60)
         }
         
-        progressView.snp.makeConstraints { make in
-            make.center.equalToSuperview()
-            make.width.height.equalToSuperview()
-        }
-        
         playButton.snp.makeConstraints { make in
             make.center.equalToSuperview()
             make.width.height.equalTo(40)
@@ -108,15 +104,33 @@ final class TimerCell: UITableViewCell {
         }
     }
     
+    private func setupCircularProgressLayer() {
+        let circularPath = UIBezierPath(
+            arcCenter: CGPoint(x: 30, y: 30), // 중심점
+            radius: 28,                      // 반지름
+            startAngle: -CGFloat.pi / 2,     // 시작 각도 (위쪽)
+            endAngle: 1.5 * CGFloat.pi,      // 종료 각도 (360도)
+            clockwise: true
+        )
+        
+        circularProgressLayer.path = circularPath.cgPath
+        progressContainerView.layer.addSublayer(circularProgressLayer)
+    }
+    
     // MARK: - Configuration
     func configure(hours: Int, minutes: Int, seconds: Int, progress: Float) {
         mainLabel.text = String(format: "%02d:%02d:%02d", hours, minutes, seconds)
         subLabel.text = "\(hours)시간 \(minutes)분 \(seconds)초"
-        progressView.progress = progress
+        
+        updateProgress(progress)
     }
     
     // MARK: - Public Methods
     func updateProgress(_ progress: Float) {
-        progressView.setProgress(progress, animated: true)
+        CATransaction.begin()
+        //CATransaction.setAnimationDuration(0.1) // 애니메이션 지속 시간
+        circularProgressLayer.strokeEnd = CGFloat(progress)
+        CATransaction.commit()
     }
 }
+
