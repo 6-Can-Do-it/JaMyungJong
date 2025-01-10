@@ -67,9 +67,16 @@ final class TimerView: UIView {
         return label
     }()
 
-    private let value1: UITextField = {
+    let value1: UITextField = {
         let textField = UITextField()
-        textField.text = "타이머"
+        
+        let placeholderText = "타이머"
+        textField.attributedPlaceholder = NSAttributedString(
+            string: placeholderText,
+            attributes: [
+                .foregroundColor: SubColor.textPlaceholderColor
+            ]
+        )
         textField.backgroundColor = .clear
         textField.textColor = SubColor.darkTurquoisePoint
         textField.textAlignment = .right
@@ -83,7 +90,7 @@ final class TimerView: UIView {
         return label
     }()
 
-    private let value2: UIButton = {
+    let value2: UIButton = {
         var configuration = UIButton.Configuration.plain()
         configuration.title = "은하수"
         configuration.baseForegroundColor = SubColor.darkTurquoisePoint

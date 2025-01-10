@@ -10,6 +10,10 @@ import UIKit
 
 final class TimerCell: UITableViewCell {
     
+    // MARK: - Properties
+    var isTimerRunning = false
+    var toggleTimer: (() -> Void)? // 타이머 상태를 제어하는 클로저
+    
     // MARK: - UI Components
     let mainLabel: UILabel = {
         let label = UILabel()
@@ -39,7 +43,7 @@ final class TimerCell: UITableViewCell {
         shapeLayer.fillColor = UIColor.clear.cgColor
         shapeLayer.strokeColor = MainColor.aliceColor.cgColor
         shapeLayer.lineCap = .round
-        shapeLayer.strokeEnd = 0 // 초기 진행 상태
+        shapeLayer.strokeEnd = 0
         return shapeLayer
     }()
     
@@ -62,6 +66,7 @@ final class TimerCell: UITableViewCell {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         setupLayout()
         setupCircularProgressLayer()
+        configureButtonAction()
     }
     
     required init?(coder: NSCoder) {
@@ -72,12 +77,11 @@ final class TimerCell: UITableViewCell {
     private func setupLayout() {
         backgroundColor = .clear
         
-        // UI 구성
         [mainLabel, subLabel, progressContainerView, separatorView].forEach { contentView.addSubview($0) }
         progressContainerView.addSubview(playButton)
         
         mainLabel.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(10)
+            make.top.equalToSuperview().offset(16)
             make.leading.equalToSuperview()
         }
         
@@ -98,7 +102,7 @@ final class TimerCell: UITableViewCell {
         }
         
         separatorView.snp.makeConstraints { make in
-            make.top.equalTo(progressContainerView.snp.bottom).offset(10)
+            make.top.equalTo(subLabel.snp.bottom).offset(10)
             make.leading.trailing.bottom.equalToSuperview()
             make.height.equalTo(1)
         }
@@ -106,13 +110,12 @@ final class TimerCell: UITableViewCell {
     
     private func setupCircularProgressLayer() {
         let circularPath = UIBezierPath(
-            arcCenter: CGPoint(x: 30, y: 30), // 중심점
-            radius: 28,                      // 반지름
-            startAngle: -CGFloat.pi / 2,     // 시작 각도 (위쪽)
-            endAngle: 1.5 * CGFloat.pi,      // 종료 각도 (360도)
+            arcCenter: CGPoint(x: 30, y: 30),
+            radius: 28,
+            startAngle: -CGFloat.pi / 2,
+            endAngle: 1.5 * CGFloat.pi,
             clockwise: true
         )
-        
         circularProgressLayer.path = circularPath.cgPath
         progressContainerView.layer.addSublayer(circularProgressLayer)
     }
@@ -121,14 +124,27 @@ final class TimerCell: UITableViewCell {
     func configure(hours: Int, minutes: Int, seconds: Int, progress: Float) {
         mainLabel.text = String(format: "%02d:%02d:%02d", hours, minutes, seconds)
         subLabel.text = "\(hours)시간 \(minutes)분 \(seconds)초"
-        
         updateProgress(progress)
+    }
+    
+    // MARK: - Button Action
+    private func configureButtonAction() {
+        playButton.addTarget(self, action: #selector(playButtonTapped), for: .touchUpInside)
+    }
+    
+    @objc private func playButtonTapped() {
+        isTimerRunning.toggle()
+    
+        let imageName = isTimerRunning ? "pause.fill" : "play.fill"
+        playButton.setImage(UIImage(systemName: imageName), for: .normal)
+        
+        toggleTimer?()
     }
     
     // MARK: - Public Methods
     func updateProgress(_ progress: Float) {
         CATransaction.begin()
-        //CATransaction.setAnimationDuration(0.1) // 애니메이션 지속 시간
+        CATransaction.setDisableActions(true)
         circularProgressLayer.strokeEnd = CGFloat(progress)
         CATransaction.commit()
     }
