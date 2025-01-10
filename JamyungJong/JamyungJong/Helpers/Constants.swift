@@ -12,7 +12,7 @@ public enum SubColor {
     static let dogerBlue = UIColor(hexCode: "#1E90FF") //청색 - 밝고 활기찬 느낌의 청색
     static let navy = UIColor(hexCode: "#000080") //짙은 청색 - 안정감과 세련됨을 더해줄 짙은 청색
     static let darkTurquoisePoint = UIColor(hexCode: "#00CED1") //포인트 색상 - 뱀의 신비로움을 강조할 수 있는 청록색
-
+    static let textPlaceholderColor = UIColor(hexCode: "#7699A8") // 텍스트필드 텍스트플레이스홀더 색상
 }
 
 //MARK: - 배경 및 보조 색상

@@ -13,6 +13,7 @@ final class TimerViewMainController: UIViewController {
     private let timerView = TimerView()
     private var recentTimers: [(hours: Int, minutes: Int, seconds: Int)] = []
     private var selectedTime: (hours: Int, minutes: Int, seconds: Int) = (0, 0, 0)
+    private var presentTimers: [(hours: Int, minutes: Int, seconds: Int, remainingTime: Int, countdownTimer: Timer?)] = []
     private var countdownTimer: Timer?
     private var remainingTime: Int = 0
     private var isTimerRunning = false
@@ -30,15 +31,24 @@ final class TimerViewMainController: UIViewController {
         timerView.recentTimersTableView.delegate = self
     }
     
+    override func viewDidAppear(_ animated: Bool) {
+        countdownTimer = nil
+        isTimerRunning = false
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        timerView.recentTimersTableView.reloadData()
+    }
+    
     private func setupNavigationBar() {
         let editButton = UIBarButtonItem(
             title: "편집",
             style: .plain,
-            target: nil,
-            action: nil
+            target: self,
+            action: #selector(editButtonTapped)
         )
         editButton.setTitleTextAttributes([.foregroundColor: SubColor.dogerBlue], for: .normal)
-        navigationItem.title = "편집"
         navigationItem.leftBarButtonItem = editButton
     }
     
@@ -61,6 +71,10 @@ final class TimerViewMainController: UIViewController {
         }, for: .touchUpInside)
     }
     
+    @objc func editButtonTapped() {
+        
+    }
+    
     private func cancelTapped() {
         countdownTimer?.invalidate()
         countdownTimer = nil
@@ -70,43 +84,16 @@ final class TimerViewMainController: UIViewController {
     
     private func startTapped() {
         if isTimerRunning { return }
-        
-        remainingTime = (selectedTime.hours * 3600) + (selectedTime.minutes * 60) + selectedTime.seconds
+
+        let newTimer = TimerModel(hours: selectedTime.hours, minutes: selectedTime.minutes, seconds: selectedTime.seconds)
+        presentTimers.append((newTimer.hours, newTimer.minutes, newTimer.seconds, newTimer.remainingTime, nil))
         recentTimers.insert(selectedTime, at: 0)
-        timerView.recentTimersTableView.reloadData()
-        
-        isTimerRunning = true
-        
+
         let detailsVC = TimerDetailsViewController()
         detailsVC.recentTimers = recentTimers
-        detailsVC.selectedTime = selectedTime
+        detailsVC.presentTimers = presentTimers
         navigationController?.pushViewController(detailsVC, animated: false)
-        
-        startCountdown()
-    }
-    
-    private func startCountdown() {
-        countdownTimer?.invalidate()
-        countdownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            self?.updateCountdown()
-        }
-    }
-    
-    private func updateCountdown() {
-        if remainingTime > 0 {
-            remainingTime -= 1
-            let hours = remainingTime / 3600
-            let minutes = (remainingTime % 3600) / 60
-            let seconds = remainingTime % 60
-            print("Remaining Time: \(hours):\(minutes):\(seconds)")
-        } else {
-            countdownTimer?.invalidate()
-            countdownTimer = nil
-            isTimerRunning = false
-            timerView.timePicker.isHidden = false
-            timerView.containerView.isHidden = false
-            print("Timer finished!")
-        }
+        presentTimers.removeAll()
     }
 }
 
@@ -147,8 +134,13 @@ extension TimerViewMainController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "RecentTimerCell", for: indexPath) as! RecentTimerCell
         let timer = recentTimers[indexPath.row]
-        cell.mainLabel.text = String(format: "%d:%02d:%02d", timer.hours, timer.minutes, timer.seconds)
-        cell.subLabel.text = "\(timer.hours)시간 \(timer.minutes)분 \(timer.seconds)초"
+        
+        if let text = timerView.value1.text, !text.isEmpty {
+            cell.subLabel.text = text
+        } else {
+            cell.configure(hours: timer.hours, minutes: timer.minutes, seconds: timer.seconds)
+        }
+        
         cell.playButton.tag = indexPath.row
         cell.playButton.addAction(UIAction { [weak self] _ in
             let selectedTimer = self?.recentTimers[cell.playButton.tag]
