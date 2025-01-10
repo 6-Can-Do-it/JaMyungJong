@@ -12,7 +12,6 @@ final class TimerDetailsViewController: UIViewController {
     
     // MARK: - Properties
     var recentTimers: [(hours: Int, minutes: Int, seconds: Int)] = []
-    var selectedTime: (hours: Int, minutes: Int, seconds: Int)?
     var presentTimers: [(hours: Int, minutes: Int, seconds: Int, remainingTime: Int, countdownTimer: Timer?)] = [
         (hours: 0, minutes: 0, seconds: 0, remainingTime: 0, countdownTimer: nil)
     ]
