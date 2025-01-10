@@ -16,6 +16,7 @@ final class TimerViewMainController: UIViewController {
     private var presentTimers: [(hours: Int, minutes: Int, seconds: Int, remainingTime: Int, countdownTimer: Timer?)] = []
     private var countdownTimer: Timer?
     private var remainingTime: Int = 0
+    private var selectedSound: String = "은하수"
     private var isTimerRunning = false
 
     override func loadView() {
@@ -39,6 +40,13 @@ final class TimerViewMainController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         timerView.recentTimersTableView.reloadData()
+        if let lastSelectedTimer = recentTimers.first {
+            timerView.timePicker.selectRow(lastSelectedTimer.hours, inComponent: 0, animated: true)
+            timerView.timePicker.selectRow(lastSelectedTimer.minutes, inComponent: 1, animated: true)
+            timerView.timePicker.selectRow(lastSelectedTimer.seconds, inComponent: 2, animated: true)
+            
+            selectedTime = lastSelectedTimer // 선택된 타이머 값 갱신
+        }
     }
     
     private func setupNavigationBar() {
@@ -69,6 +77,18 @@ final class TimerViewMainController: UIViewController {
         timerView.startButton.addAction(UIAction { [weak self] _ in
             self?.startTapped()
         }, for: .touchUpInside)
+        
+        timerView.value2.addTarget(self, action: #selector(value2ButtonTapped), for: .touchUpInside)
+    }
+    
+    @objc private func value2ButtonTapped() {
+        let soundSelectionVC = SoundSelectionViewController()
+        soundSelectionVC.selectedSound = selectedSound
+        soundSelectionVC.delegate = self
+
+        let navController = UINavigationController(rootViewController: soundSelectionVC)
+        navController.modalPresentationStyle = .formSheet
+        present(navController, animated: true)
     }
     
     @objc func editButtonTapped() {
@@ -92,7 +112,7 @@ final class TimerViewMainController: UIViewController {
         let detailsVC = TimerDetailsViewController()
         detailsVC.recentTimers = recentTimers
         detailsVC.presentTimers = presentTimers
-        navigationController?.pushViewController(detailsVC, animated: false)
+        navigationController?.pushViewController(detailsVC, animated: true)
         presentTimers.removeAll()
     }
 }
@@ -142,9 +162,10 @@ extension TimerViewMainController: UITableViewDataSource, UITableViewDelegate {
         }
         
         cell.playButton.tag = indexPath.row
+        cell.playButton.removeTarget(nil, action: nil, for: .allEvents)
         cell.playButton.addAction(UIAction { [weak self] _ in
             let selectedTimer = self?.recentTimers[cell.playButton.tag]
-            self?.selectedTime = selectedTimer!
+            self?.selectedTime = selectedTimer ?? (0, 0, 0)
             self?.startTapped()
         }, for: .touchUpInside)
         return cell
@@ -170,5 +191,12 @@ extension TimerViewMainController: UITableViewDataSource, UITableViewDelegate {
         }
         
         return headerView
+    }
+}
+
+extension TimerViewMainController: SoundSelectionDelegate {
+    func didSelectSound(_ sound: String) {
+        selectedSound = sound
+        timerView.value2.setTitle(sound, for: .normal)
     }
 }
