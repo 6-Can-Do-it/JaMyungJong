@@ -5,11 +5,6 @@
 //  Created by t2023-m0072 on 1/9/25.
 //
 
-//
-//  MissionViewController.swift
-//  JamyungJong
-//
-
 import UIKit
 import SnapKit
 
@@ -180,9 +175,12 @@ class MissionViewController: UIViewController {
             // 오답 처리
             inputLabel.text = "X       \(userAnswer)"
             inputLabel.backgroundColor = .red
+            
+            // 0.5초 후 초기화하고 다시 입력 가능 상태로 전환
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                self.inputLabel.text = ""
-                self.inputLabel.backgroundColor = .darkGray
+                self.userAnswer = "" // 사용자 입력 초기화
+                self.inputLabel.text = "" // 입력 필드 초기화
+                self.inputLabel.backgroundColor = .darkGray // 배경색 초기화
             }
         }
     }
@@ -193,18 +191,35 @@ class MissionViewController: UIViewController {
         inputLabel.isHidden = true
         verticalStackView.isHidden = true
 
-        let completionLabel = UILabel()
-        completionLabel.text = "참 잘했어요!"
-        completionLabel.textColor = .white
-        completionLabel.font = .boldSystemFont(ofSize: 32)
-        completionLabel.textAlignment = .center
-        view.addSubview(completionLabel)
-        completionLabel.snp.makeConstraints { make in
-            make.center.equalToSuperview()
+        // 이모티콘 이미지 추가
+        let emojiImageView = UIImageView()
+        emojiImageView.contentMode = .scaleAspectFit
+        view.addSubview(emojiImageView)
+        emojiImageView.snp.makeConstraints { make in
+            make.centerX.equalToSuperview()
+            make.centerY.equalToSuperview().offset(-120)
+            make.width.height.equalTo(100)
         }
 
+        // 메시지 레이블 추가
+        let messageLabel = UILabel()
+        messageLabel.textColor = .white
+        messageLabel.font = .boldSystemFont(ofSize: 32)
+        messageLabel.textAlignment = .center
+        view.addSubview(messageLabel)
+        messageLabel.snp.makeConstraints { make in
+            make.centerX.equalToSuperview()
+            make.top.equalTo(emojiImageView.snp.bottom).offset(20)
+        }
+
+        // 초기 화면 (참 잘했어요!)
+        emojiImageView.image = UIImage(named: "ddaBong")
+        messageLabel.text = "참 잘했어요!"
+
+        // 2초 후 변경 (오늘 아침도 활기차게!)
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-            completionLabel.text = "오늘 아침도 활기찬 하루!"
+            emojiImageView.image = UIImage(named: "sun")
+            messageLabel.text = "오늘 아침도 활기차게!"
         }
     }
 
@@ -213,7 +228,6 @@ class MissionViewController: UIViewController {
             currentQuestionIndex -= 1 // 이전 문제로 돌아감
             loadQuestion()
         } else {
-            // 첫 번째 문제에서 < 버튼을 눌렀을 때 동작 (예: 화면 닫기)
             navigationController?.popViewController(animated: true)
         }
     }
