@@ -11,6 +11,11 @@ import SnapKit
 //피커뷰가 포함된 메인뷰
 class SettingMainView: UIView {
     
+    private var timer = Timer()
+    //datePicker에서 선택된 값을 저장하기 위한 변수
+    private var selectedDate: Date?
+    private var timeRemaining: TimeInterval = 0
+    
     let daySetView = DaySetView()
     let missionSetView = MissonSetView()
     let soundSetView = SoundSetView()
@@ -20,6 +25,14 @@ class SettingMainView: UIView {
         backgroundColor = .black
         configureUI()
     }
+    private let timeDiffLabel: UILabel = {
+        let label = UILabel()
+        label.font = .boldSystemFont(ofSize: 20)
+        label.textColor = .white
+        label.textAlignment = .center
+        
+        return label
+    }()
     
     private let datePicker: UIDatePicker = {
         let picker = UIDatePicker()
@@ -27,10 +40,45 @@ class SettingMainView: UIView {
         picker.preferredDatePickerStyle = .wheels
         picker.datePickerMode = .time
         picker.backgroundColor = .white
-        picker.locale = NSLocale.autoupdatingCurrent
+        picker.locale = Locale(identifier: "ko-KR")
+        picker.addTarget(self, action: #selector(datePickerVlaue), for: .valueChanged)
         
         return picker
     }()
+    
+    @objc func datePickerVlaue(sender: UIDatePicker) {
+        selectedDate = sender.date
+        
+        let calendar = Calendar.current
+        let now = Date()
+        
+        //시스템 (현재) 시간
+        let today = calendar.dateComponents([.hour, .minute], from: now
+        )
+        //선택한 시간
+        let selected = calendar.dateComponents([.hour, .minute], from: selectedDate!)
+        
+        let selectedMinutes = (selected.hour! * 60) + selected.minute!
+        let currentMinutes = (today.hour! * 60) + today.minute!
+        var timeDiff = selectedMinutes - currentMinutes
+        
+        if timeDiff < 0 {
+            timeDiff += 24 * 60
+        }
+        
+        let hoursDiff = timeDiff / 60
+        let minutesDiff = timeDiff % 60
+        
+        timeDiffLabel.text = String("\(hoursDiff)시간 \(minutesDiff)분 후에 알림이 울릴 예정이에요")
+    }
+    
+    private func setTimer(with countDown: Double) {
+        timer.invalidate()
+    }
+    deinit {
+        timer.invalidate()
+    }
+
     
     private lazy var stackViewForUIView: UIStackView = {
         let stackView = UIStackView(arrangedSubviews: [daySetView,missionSetView,soundSetView])
@@ -42,8 +90,13 @@ class SettingMainView: UIView {
     
     private func configureUI() {
         //기본뷰와,datePicker 레이아웃 설정
-        [stackViewForUIView, datePicker].forEach { self.addSubview($0)}
+        [stackViewForUIView, datePicker, timeDiffLabel].forEach { self.addSubview($0)}
         
+        timeDiffLabel.snp.makeConstraints {
+            $0.top.equalTo(self.safeAreaLayoutGuide)
+            $0.leading.equalTo(self.safeAreaLayoutGuide)
+            $0.trailing.equalTo(self.safeAreaLayoutGuide)
+        }
         stackViewForUIView.snp.makeConstraints {
             $0.top.equalTo(datePicker.snp.bottom).offset(30)
             $0.leading.equalToSuperview().offset(10)
@@ -68,3 +121,8 @@ class SettingMainView: UIView {
     
 }
 
+
+@available(iOS 17.0, *)
+#Preview {
+    SetAlarmViewController()
+}
