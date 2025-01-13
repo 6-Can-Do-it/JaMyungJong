@@ -7,8 +7,9 @@
 
 import UIKit
 import SnapKit
+import CoreLocation
 
-class MornigViewController: UIViewController {
+class MorningViewController: UIViewController {
     
     let textButton: UIButton = {
         let button = UIButton()
@@ -83,14 +84,89 @@ class MornigViewController: UIViewController {
         return label
     }()
     
-    
+    private let locationManager = CLLocationManager()
+    private var currentLocation: CLLocation?
+
     
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
         setupConstraints()
-//        setupActions()
+        setupLocationManager()
+        
+        DispatchQueue.main.async {
+            self.setupLocationManager()
+        }
     }
+    private func setupLocationManager() {
+        locationManager.delegate = self
+        locationManager.desiredAccuracy = kCLLocationAccuracyBest
+        
+        // 현재 권한 상태 확인
+        switch locationManager.authorizationStatus {
+        case .notDetermined:
+            // 권한이 결정되지 않은 경우에만 요청
+            DispatchQueue.main.async {
+                self.locationManager.requestWhenInUseAuthorization()
+            }
+        case .authorizedWhenInUse, .authorizedAlways:
+            // 이미 권한이 있는 경우 위치 업데이트 시작
+            locationManager.startUpdatingLocation()
+        case .denied, .restricted:
+            // 권한이 거부된 경우 기본 위치(서울) 사용
+            let seoulLat = 37.5665
+            let seoulLon = 126.9780
+            fetchWeatherData(lat: seoulLat, lon: seoulLon)
+        @unknown default:
+            break
+        }
+    }
+
+     
+     private func fetchWeatherData(lat: Double, lon: Double) {
+         let urlString = "\(Configuration.baseURL)/weather?lat=\(lat)&lon=\(lon)&appid=\(Configuration.apiKey)&units=metric"
+         
+         guard let url = URL(string: urlString) else { return }
+         
+         let task = URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
+             guard let self = self else { return }
+             
+             if let error = error {
+                 print("Error: \(error.localizedDescription)")
+                 return
+             }
+             
+             guard let data = data else { return }
+             
+             do {
+                 let decoder = JSONDecoder()
+                 let weatherData = try decoder.decode(WeatherModel.self, from: data)
+                 
+                 DispatchQueue.main.async {
+                     self.updateWeatherUI(with: weatherData)
+                 }
+             } catch {
+                 print("Decoding error: \(error)")
+             }
+         }
+         task.resume()
+     }
+     
+     private func updateWeatherUI(with weather: WeatherModel) {
+         // 온도 업데이트
+         let temperature = Int(round(weather.main.temp))
+         temperatureLabel.text = "\(temperature)°C"
+         
+         // 날씨 아이콘 업데이트
+         if let weatherCondition = weather.weather.first {
+             updateWeatherIcon(with: weatherCondition.icon)
+             
+             // 날씨 상태 업데이트
+             locationLabel.text = weatherCondition.main.capitalized
+         }
+     }
+    
+    
     
     private func setupUI() {
         view.backgroundColor = .systemTeal
@@ -145,8 +221,26 @@ class MornigViewController: UIViewController {
             make.centerX.equalToSuperview()
             make.leading.trailing.equalToSuperview().inset(40)
         }
+        
+        locationButton.addTarget(self, action: #selector(locationButtonTapped), for: .touchUpInside)
+
     }
     
+    @objc private func locationButtonTapped() {
+        if CLLocationManager.locationServicesEnabled() {
+            switch locationManager.authorizationStatus {
+            case .notDetermined, .restricted, .denied:
+                // 설정으로 이동하기
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(url)
+                }
+            case .authorizedWhenInUse, .authorizedAlways:
+                locationManager.startUpdatingLocation()
+            @unknown default:
+                break
+            }
+        }
+    }
 
     @objc private func fortuneImageTapped() {
         if isFortuneCracked {
@@ -165,12 +259,26 @@ class MornigViewController: UIViewController {
                     // 메시지 표시 애니메이션
                     self.fortuneMessageLabel.alpha = 1
                     self.showFortuneMessage()
+                } completion: { _ in
+                    // 2초 후에 WeatherViewController로 전환
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                        self.navigateToWeatherViewController()
+                    }
                 }
             }
             
             isFortuneCracked = true
         }
     }
+
+    // WeatherViewController로 전환하는 메서드 추가
+    private func navigateToWeatherViewController() {
+        let weatherVC = WeatherViewController()
+        weatherVC.modalPresentationStyle = .fullScreen
+        weatherVC.modalTransitionStyle = .crossDissolve
+        present(weatherVC, animated: true)
+    }
+
     
     private func resetFortuneCookie() {
         isFortuneCracked = false
@@ -229,24 +337,91 @@ class MornigViewController: UIViewController {
         })
     }
     
+    // 기존의 updateWeatherIcon 함수를 수정된 버전으로 교체
     private func updateWeatherIcon(with iconCode: String) {
-        // OpenWeather 아이콘 코드를 시스템 아이콘으로 변환
-        let systemIcon: String
-        switch iconCode {
-        case "01d": systemIcon = "sun.max.fill"
-        case "01n": systemIcon = "moon.fill"
-        case "02d": systemIcon = "cloud.sun.fill"
-        case "02n": systemIcon = "cloud.moon.fill"
-        case "03d", "03n": systemIcon = "cloud.fill"
-        case "04d", "04n": systemIcon = "cloud.heavyrain.fill"
-        case "09d", "09n": systemIcon = "cloud.rain.fill"
-        case "10d": systemIcon = "cloud.sun.rain.fill"
-        case "10n": systemIcon = "cloud.moon.rain.fill"
-        case "11d", "11n": systemIcon = "cloud.bolt.fill"
-        case "13d", "13n": systemIcon = "snow"
-        case "50d", "50n": systemIcon = "cloud.fog.fill"
-        default: systemIcon = "sun.max.fill"
+        let iconMapping: [String: String] = [
+            "01d": "sun.max.fill",
+            "01n": "moon.fill",
+            "02d": "cloud.sun.fill",
+            "02n": "cloud.moon.fill",
+            "03d": "cloud.fill",
+            "03n": "cloud.fill",
+            "04d": "smoke.fill",
+            "04n": "smoke.fill",
+            "09d": "cloud.rain.fill",
+            "09n": "cloud.rain.fill",
+            "10d": "cloud.sun.rain.fill",
+            "10n": "cloud.moon.rain.fill",
+            "11d": "cloud.bolt.fill",
+            "11n": "cloud.bolt.fill",
+            "13d": "snow",
+            "13n": "snow",
+            "50d": "cloud.fog.fill",
+            "50n": "cloud.fog.fill"
+        ]
+        
+        let systemImageName = iconMapping[iconCode] ?? "sun.max.fill"
+        weatherIconImageView.image = UIImage(systemName: systemImageName)
+    }
+}
+
+// MARK: - CLLocationManagerDelegate
+extension MorningViewController: CLLocationManagerDelegate {
+    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        switch manager.authorizationStatus {
+        case .authorizedWhenInUse, .authorizedAlways:
+            locationManager.startUpdatingLocation()
+            locationButton.setTitle("정확한 위치: 켜짐", for: .normal)
+            
+        case .denied, .restricted:
+            locationButton.setTitle("정확한 위치: 꺼짐", for: .normal)
+            // 위치 권한이 거부된 경우 기본 위치(서울)의 날씨 정보를 가져올 수 있습니다
+            let seoulLat = 37.5665
+            let seoulLon = 126.9780
+            fetchWeatherData(lat: seoulLat, lon: seoulLon)
+            
+        case .notDetermined:
+            locationManager.requestWhenInUseAuthorization()
+            locationButton.setTitle("정확한 위치: 꺼짐", for: .normal)
+            
+        @unknown default:
+            locationButton.setTitle("정확한 위치: 꺼짐", for: .normal)
         }
-        weatherIconImageView.image = UIImage(systemName: systemIcon)
+    }
+    
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        guard let location = locations.last else { return }
+        
+        // 위치 업데이트가 성공하면 위치 업데이트를 중지
+        locationManager.stopUpdatingLocation()
+        
+        // 현재 위치 저장
+        currentLocation = location
+        
+        // 날씨 데이터 가져오기
+        fetchWeatherData(
+            lat: location.coordinate.latitude,
+            lon: location.coordinate.longitude
+        )
+        
+        // 위치 정보로 도시 이름 가져오기
+        let geocoder = CLGeocoder()
+        geocoder.reverseGeocodeLocation(location) { [weak self] (placemarks, error) in
+            if let cityName = placemarks?.first?.locality {
+                DispatchQueue.main.async {
+                    self?.locationLabel.text = cityName
+                }
+            }
+        }
+    }
+    
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        print("Location error: \(error.localizedDescription)")
+        locationButton.setTitle("위치 오류", for: .normal)
+        
+        // 위치 서비스 오류 시 서울의 날씨 정보를 가져옵니다
+        let seoulLat = 37.5665
+        let seoulLon = 126.9780
+        fetchWeatherData(lat: seoulLat, lon: seoulLon)
     }
 }
