@@ -7,8 +7,9 @@
 
 import UIKit
 import SnapKit
+import CoreLocation
 
-class MornigViewController: UIViewController {
+class MorningViewController: UIViewController {
     
     let textButton: UIButton = {
         let button = UIButton()
@@ -83,14 +84,66 @@ class MornigViewController: UIViewController {
         return label
     }()
     
-    
+    private let locationManager = CLLocationManager()
+    private var currentLocation: CLLocation?
+
     
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
         setupConstraints()
-//        setupActions()
+        setupLocationManager()
     }
+    private func setupLocationManager() {
+         locationManager.delegate = self
+         locationManager.desiredAccuracy = kCLLocationAccuracyBest
+         locationManager.requestWhenInUseAuthorization()
+     }
+     
+     private func fetchWeatherData(lat: Double, lon: Double) {
+         let urlString = "\(Configuration.baseURL)/weather?lat=\(lat)&lon=\(lon)&appid=\(Configuration.apiKey)&units=metric"
+         
+         guard let url = URL(string: urlString) else { return }
+         
+         let task = URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
+             guard let self = self else { return }
+             
+             if let error = error {
+                 print("Error: \(error.localizedDescription)")
+                 return
+             }
+             
+             guard let data = data else { return }
+             
+             do {
+                 let decoder = JSONDecoder()
+                 let weatherData = try decoder.decode(WeatherModel.self, from: data)
+                 
+                 DispatchQueue.main.async {
+                     self.updateWeatherUI(with: weatherData)
+                 }
+             } catch {
+                 print("Decoding error: \(error)")
+             }
+         }
+         task.resume()
+     }
+     
+     private func updateWeatherUI(with weather: WeatherModel) {
+         // 온도 업데이트
+         let temperature = Int(round(weather.main.temp))
+         temperatureLabel.text = "\(temperature)°C"
+         
+         // 날씨 아이콘 업데이트
+         if let weatherCondition = weather.weather.first {
+             updateWeatherIcon(with: weatherCondition.icon)
+             
+             // 날씨 상태 업데이트
+             locationLabel.text = weatherCondition.main.capitalized
+         }
+     }
+    
+    
     
     private func setupUI() {
         view.backgroundColor = .systemTeal
@@ -229,24 +282,60 @@ class MornigViewController: UIViewController {
         })
     }
     
+    // 기존의 updateWeatherIcon 함수를 수정된 버전으로 교체
     private func updateWeatherIcon(with iconCode: String) {
-        // OpenWeather 아이콘 코드를 시스템 아이콘으로 변환
-        let systemIcon: String
-        switch iconCode {
-        case "01d": systemIcon = "sun.max.fill"
-        case "01n": systemIcon = "moon.fill"
-        case "02d": systemIcon = "cloud.sun.fill"
-        case "02n": systemIcon = "cloud.moon.fill"
-        case "03d", "03n": systemIcon = "cloud.fill"
-        case "04d", "04n": systemIcon = "cloud.heavyrain.fill"
-        case "09d", "09n": systemIcon = "cloud.rain.fill"
-        case "10d": systemIcon = "cloud.sun.rain.fill"
-        case "10n": systemIcon = "cloud.moon.rain.fill"
-        case "11d", "11n": systemIcon = "cloud.bolt.fill"
-        case "13d", "13n": systemIcon = "snow"
-        case "50d", "50n": systemIcon = "cloud.fog.fill"
-        default: systemIcon = "sun.max.fill"
+        let iconMapping: [String: String] = [
+            "01d": "sun.max.fill",
+            "01n": "moon.fill",
+            "02d": "cloud.sun.fill",
+            "02n": "cloud.moon.fill",
+            "03d": "cloud.fill",
+            "03n": "cloud.fill",
+            "04d": "smoke.fill",
+            "04n": "smoke.fill",
+            "09d": "cloud.rain.fill",
+            "09n": "cloud.rain.fill",
+            "10d": "cloud.sun.rain.fill",
+            "10n": "cloud.moon.rain.fill",
+            "11d": "cloud.bolt.fill",
+            "11n": "cloud.bolt.fill",
+            "13d": "snow",
+            "13n": "snow",
+            "50d": "cloud.fog.fill",
+            "50n": "cloud.fog.fill"
+        ]
+        
+        let systemImageName = iconMapping[iconCode] ?? "sun.max.fill"
+        weatherIconImageView.image = UIImage(systemName: systemImageName)
+    }
+}
+
+// MARK: - CLLocationManagerDelegate
+extension MorningViewController: CLLocationManagerDelegate {
+    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        switch manager.authorizationStatus {
+        case .authorizedWhenInUse, .authorizedAlways:
+            locationManager.startUpdatingLocation()
+            locationButton.setTitle("정확한 위치: 켜짐", for: .normal)
+        default:
+            locationButton.setTitle("정확한 위치: 꺼짐", for: .normal)
         }
-        weatherIconImageView.image = UIImage(systemName: systemIcon)
+    }
+    
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        guard let location = locations.last else { return }
+        currentLocation = location
+        locationManager.stopUpdatingLocation()
+        
+        // 위치가 업데이트되면 날씨 데이터를 가져옵니다
+        fetchWeatherData(
+            lat: location.coordinate.latitude,
+            lon: location.coordinate.longitude
+        )
+    }
+    
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        print("Location error: \(error.localizedDescription)")
+        locationButton.setTitle("위치 오류", for: .normal)
     }
 }

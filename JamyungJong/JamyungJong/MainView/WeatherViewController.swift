@@ -204,21 +204,18 @@ class WeatherViewController: UIViewController {
     }
 
 extension WeatherViewController: UITableViewDelegate {
-    // 테이블 뷰 셀의 높이 크기 지정.
+
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         40
     }
 }
 
 extension WeatherViewController: UITableViewDataSource {
-    // 테이블 뷰의 indexPath 마다 테이블 셀 지정.
-    // indexPath = 테이블 뷰의 행과 섹션을 지정. 여기서 섹션은 사용하지 않고 행만 사용함.
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let cell = tableView.dequeueReusableCell(withIdentifier: TableViewCell.id) as? TableViewCell else { return UITableViewCell() }
         cell.configureCell(forecastWeather: dataSource[indexPath.row])
         return cell
     }
-    // 테이블 뷰 섹션에 행이 몇 개 들어가는가. 여기서 섹션은 없으니 그냥 총 행 개수를 입력하면 된다.
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         dataSource.count
     }
