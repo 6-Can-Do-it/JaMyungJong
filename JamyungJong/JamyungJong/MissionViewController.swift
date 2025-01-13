@@ -230,7 +230,7 @@ class MissionViewController: UIViewController {
     
     // MARK: - MorningViewController로 이동
     private func goToMorningViewController() {
-        let morningVC = MornigViewController()
+        let morningVC = MorningViewController()
         morningVC.modalPresentationStyle = .fullScreen
         present(morningVC, animated: true, completion: nil)
     }
