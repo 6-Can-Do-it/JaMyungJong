@@ -7,10 +7,18 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		9981AE6E2D35228900E7F149 /* PresentTimerEntities+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9981AE6B2D35228900E7F149 /* PresentTimerEntities+CoreDataProperties.swift */; };
+		9981AE6F2D35228900E7F149 /* RecentTimerEntities+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9981AE6C2D35228900E7F149 /* RecentTimerEntities+CoreDataClass.swift */; };
+		9981AE702D35228900E7F149 /* PresentTimerEntities+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9981AE6A2D35228900E7F149 /* PresentTimerEntities+CoreDataClass.swift */; };
+		9981AE712D35228900E7F149 /* RecentTimerEntities+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9981AE6D2D35228900E7F149 /* RecentTimerEntities+CoreDataProperties.swift */; };
 		E20743752D2D089800FECCDF /* SnapKit in Frameworks */ = {isa = PBXBuildFile; productRef = E20743742D2D089800FECCDF /* SnapKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		9981AE6A2D35228900E7F149 /* PresentTimerEntities+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PresentTimerEntities+CoreDataClass.swift"; sourceTree = "<group>"; };
+		9981AE6B2D35228900E7F149 /* PresentTimerEntities+CoreDataProperties.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PresentTimerEntities+CoreDataProperties.swift"; sourceTree = "<group>"; };
+		9981AE6C2D35228900E7F149 /* RecentTimerEntities+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RecentTimerEntities+CoreDataClass.swift"; sourceTree = "<group>"; };
+		9981AE6D2D35228900E7F149 /* RecentTimerEntities+CoreDataProperties.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RecentTimerEntities+CoreDataProperties.swift"; sourceTree = "<group>"; };
 		E207435B2D2D087700FECCDF /* JamyungJong.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = JamyungJong.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -50,6 +58,10 @@
 		E20743522D2D087700FECCDF = {
 			isa = PBXGroup;
 			children = (
+				9981AE6A2D35228900E7F149 /* PresentTimerEntities+CoreDataClass.swift */,
+				9981AE6B2D35228900E7F149 /* PresentTimerEntities+CoreDataProperties.swift */,
+				9981AE6C2D35228900E7F149 /* RecentTimerEntities+CoreDataClass.swift */,
+				9981AE6D2D35228900E7F149 /* RecentTimerEntities+CoreDataProperties.swift */,
 				E207435D2D2D087700FECCDF /* JamyungJong */,
 				E207435C2D2D087700FECCDF /* Products */,
 			);
@@ -141,6 +153,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9981AE6E2D35228900E7F149 /* PresentTimerEntities+CoreDataProperties.swift in Sources */,
+				9981AE6F2D35228900E7F149 /* RecentTimerEntities+CoreDataClass.swift in Sources */,
+				9981AE702D35228900E7F149 /* PresentTimerEntities+CoreDataClass.swift in Sources */,
+				9981AE712D35228900E7F149 /* RecentTimerEntities+CoreDataProperties.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
