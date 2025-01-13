@@ -20,6 +20,8 @@ class SoundSetView: UIView  {
         self.layer.cornerRadius = 20
         self.clipsToBounds = true
         self.addSubview(stackViewForAlarmDetailSetViewFirstLine)
+        self.addSubview(soundLabel)
+        self.addSubview(soundListButton)
     }
     
     //슬라이더
@@ -45,6 +47,26 @@ class SoundSetView: UIView  {
         return uiSwitch
     }()
     
+    private let soundLabel: UILabel = {
+        let label = UILabel()
+        label.text = "사운드"
+        label.font = .boldSystemFont(ofSize: 25)
+        label.textColor = .white
+        
+        return label
+    }()
+    
+    private let soundListButton: UIButton = {
+        let button = UIButton()
+        button.setTitle("기본", for: .normal)
+        button.titleLabel?.font = .boldSystemFont(ofSize: 20)
+        button.layer.borderColor = SubColor.darkTurquoisePoint.cgColor
+        button.layer.borderWidth = 2.0
+        button.addTarget(self, action: #selector(soundListButtonTapped), for: .touchUpInside)
+        
+        return button
+    }()
+    
     private lazy var stackViewForAlarmDetailSetViewFirstLine: UIStackView = {
         let stackView = UIStackView(arrangedSubviews: [slider, uiSwitch])
         stackView.axis = .horizontal
@@ -53,12 +75,29 @@ class SoundSetView: UIView  {
         return stackView
     }()
     
+    @objc
+    private func soundListButtonTapped() {
+//        let soundSetVC = SoundSetDetailViewController()
+//        navigationController?.pushViewController(soundSetVC, animated: true)
+    }
+    
     private func setLayout() {
         stackViewForAlarmDetailSetViewFirstLine.snp.makeConstraints {
             $0.top.equalToSuperview().inset(20)
             $0.centerX.equalToSuperview()
             $0.leading.equalToSuperview().offset(30)
             $0.trailing.equalToSuperview().inset(30)
+        }
+        
+        soundLabel.snp.makeConstraints {
+            $0.leading.equalToSuperview().offset(20)
+            $0.bottom.equalToSuperview().inset(30)
+        }
+        soundListButton.snp.makeConstraints {
+            $0.centerY.equalTo(soundLabel.snp.centerY)
+            $0.trailing.equalToSuperview().inset(30)
+            $0.width.equalTo(100)
+            
         }
     }
     
@@ -76,5 +115,9 @@ class CustomSlider: UISlider {
     }
 }
 
+@available(iOS 17.0, *)
+#Preview {
+    SetAlarmViewController()
+}
 
 

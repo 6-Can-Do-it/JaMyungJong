@@ -16,6 +16,16 @@ class DaySetView: UIView {
     let days = ["일", "월", "화", "수", "목", "금", "토"]
     private var selectedDays: [Bool] =  Array(repeating: false, count: 7)
     
+    private let checkBoxLabel: UILabel = {
+        let label = UILabel()
+        
+        label.text = "매일"
+        label.font = .boldSystemFont(ofSize: 25)
+        label.textColor = .white
+        
+        return label
+    }()
+    
     //날짜선택 레이블
     private let dateSelectViewLabel: UILabel = {
         let label = UILabel()
@@ -82,6 +92,11 @@ class DaySetView: UIView {
         setLayout()
     }
     
+    //선택된 요일 반환
+    func getSelectedDays() -> [Bool] {
+        return selectedDays
+    }
+    
     // UIView 기본 셋팅
     private func basicSetUI() {
         self.backgroundColor = .darkGray
@@ -90,6 +105,7 @@ class DaySetView: UIView {
         self.addSubview(dateSelectViewLabel)
         self.addSubview(checkBox)
         self.addSubview(stackViewForDayButton)
+        self.addSubview(checkBoxLabel)
     }
     
     @objc private func checkBoxTapped() {
@@ -129,6 +145,10 @@ class DaySetView: UIView {
             sender.backgroundColor = .gray
         }
         updateDateSelectViewLabel()
+        
+        if let settingMainView = self.superview as? SettingMainView {
+            settingMainView.updateAlarmTime()
+        }
     }
     
     //레이블 업데이트 로직
@@ -139,7 +159,6 @@ class DaySetView: UIView {
             dateSelectViewLabel.text = "반복안함"
             return
         }
-        
         if selectedCount == 7 {
             dateSelectViewLabel.text = "매일"
             return
@@ -190,8 +209,13 @@ class DaySetView: UIView {
         //체크박스
         checkBox.snp.makeConstraints {
             $0.centerY.equalTo(dateSelectViewLabel.snp.centerY)
-            $0.trailing.equalToSuperview().inset(50)
+            $0.trailing.equalToSuperview().inset(40)
             $0.width.height.equalTo(35)
+        }
+        
+        checkBoxLabel.snp.makeConstraints {
+            $0.centerY.equalTo(checkBox.snp.centerY)
+            $0.trailing.equalTo(checkBox.snp.leading).offset(-10)
         }
     }
     required init?(coder: NSCoder) {
