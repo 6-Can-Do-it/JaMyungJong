@@ -11,6 +11,8 @@ import SnapKit
 final class TimerDetailsViewController: UIViewController {
     
     // MARK: - Properties
+    private let timerDetailsView = TimerDetailsView()
+    
     var recentTimers: [(hours: Int, minutes: Int, seconds: Int)] = []
     var presentTimers: [(hours: Int, minutes: Int, seconds: Int, remainingTime: Int, countdownTimer: Timer?)] = [
         (hours: 0, minutes: 0, seconds: 0, remainingTime: 0, countdownTimer: nil)
@@ -18,36 +20,23 @@ final class TimerDetailsViewController: UIViewController {
     
     private var isTimerRunning = false
     
-    private let titleLabel: UILabel = {
-        let label = UILabel()
-        label.text = "타이머"
-        label.font = UIFont.boldSystemFont(ofSize: 30)
-        label.textColor = MainColor.aliceColor
-        return label
-    }()
-    
-    // MARK: - UI Components
-    lazy var tableView: UITableView = {
-        let tableView = UITableView()
-        tableView.register(TimerCell.self, forCellReuseIdentifier: "TimerCell")
-        tableView.register(RecentTimerCell.self, forCellReuseIdentifier: "RecentTimerCell")
-        tableView.backgroundColor = .black
-        tableView.separatorStyle = .none
-        return tableView
-    }()
+    override func loadView() {
+        view = timerDetailsView
+    }
     
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
         setupNavigationBar()
+        
     }
     
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         
         DispatchQueue.main.async {
-            self.tableView.reloadData()
+            self.timerDetailsView.tableView.reloadData()
             self.startCountdown(for: 0)
         }
     }
@@ -75,19 +64,9 @@ final class TimerDetailsViewController: UIViewController {
     // MARK: - UI Setup
     private func setupUI() {
         view.backgroundColor = .black
-        [titleLabel, tableView].forEach { view.addSubview($0) }
+        timerDetailsView.tableView.dataSource = self
+        timerDetailsView.tableView.delegate = self
         
-        titleLabel.snp.makeConstraints { make in
-            make.top.equalTo(view.safeAreaLayoutGuide).offset(16)
-            make.leading.equalToSuperview().offset(20)
-        }
-        
-        tableView.snp.makeConstraints { make in
-            make.top.equalTo(titleLabel.snp.bottom)
-            make.left.right.bottom.equalToSuperview().inset(20)
-        }
-        tableView.dataSource = self
-        tableView.delegate = self
     }
     
     @objc func editButtonTapped() {
@@ -126,17 +105,23 @@ final class TimerDetailsViewController: UIViewController {
             timer.remainingTime -= 1
             presentTimers[index] = timer  // 배열에 업데이트된 타이머 저장
             DispatchQueue.main.async { [weak self] in
-                self?.tableView.reloadRows(at: [IndexPath(row: index, section: 0)], with: .none)
+                self?.timerDetailsView.tableView.reloadRows(at: [IndexPath(row: index, section: 0)], with: .none)
             }
         } else {
             stopCountdown(for: index)
+            
+//            presentTimers.remove(at: index)
+//                DispatchQueue.main.async { [weak self] in
+//                    self?.timerDetailsView.tableView.deleteRows(at: [IndexPath(row: index, section: 0)], with: .fade)
+//                }
+//            }
             
             // 모든 타이머가 종료되었는지 확인
             if areAllTimersFinished() {
                 // 타이머 셀 초기화
                 presentTimers.removeAll()
                 DispatchQueue.main.async { [weak self] in
-                    self?.tableView.reloadSections(IndexSet(arrayLiteral: 0), with: .none)
+                    self?.timerDetailsView.tableView.reloadSections(IndexSet(arrayLiteral: 0), with: .none)
                 }
                 navigationController?.popViewController(animated: true)
             }
@@ -209,13 +194,24 @@ extension TimerDetailsViewController: UITableViewDataSource, UITableViewDelegate
                 
                 // 새로운 타이머 셀을 첫 번째 섹션에 삽입
                 let indexPathForNewTimer = IndexPath(row: self.presentTimers.count - 1, section: 0)
-                self.tableView.insertRows(at: [indexPathForNewTimer], with: .automatic)
+                self.timerDetailsView.tableView.insertRows(at: [indexPathForNewTimer], with: .automatic)
                 // 타이머 시작
                 self.startCountdown(for: self.presentTimers.count - 1)
             }, for: .touchUpInside)
             
             return cell
         }
+    }
+    
+    func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
+        if editingStyle == .delete {
+            recentTimers.remove(at: indexPath.row) // 데이터 소스에서 삭제
+            tableView.deleteRows(at: [indexPath], with: .automatic) // 테이블 뷰에서 삭제
+        }
+    }
+    
+    func tableView(_ tableView: UITableView, titleForDeleteConfirmationButtonForRowAt indexPath: IndexPath) -> String? {
+        return "삭제"
     }
     
     func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
