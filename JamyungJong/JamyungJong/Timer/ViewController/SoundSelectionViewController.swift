@@ -31,21 +31,29 @@ final class SoundSelectionViewController: UIViewController {
         setupUI()
     }
 
-    // MARK: - Setup UI
     private func setupUI() {
         view.backgroundColor = .black
         title = "타이머 종료 시"
         navigationController?.navigationBar.barTintColor = .clear
-        navigationController?.navigationBar.titleTextAttributes = [.foregroundColor: UIColor.white]
+        navigationController?.navigationBar.titleTextAttributes = [.foregroundColor: MainColor.aliceColor]
 
+        let editButton = UIBarButtonItem(
+            title: "설정",
+            style: .done,
+            target: self,
+            action: #selector(editButtonTapped)
+        )
+        editButton.setTitleTextAttributes([.foregroundColor: SubColor.dogerBlue], for: .normal)
+        navigationItem.rightBarButtonItem = editButton
+        
         let closeButton = UIBarButtonItem(
             title: "닫기",
-            style: .done,
+            style: .plain,
             target: self,
             action: #selector(closeButtonTapped)
         )
-        closeButton.setTitleTextAttributes([.foregroundColor: UIColor.systemBlue], for: .normal)
-        navigationItem.rightBarButtonItem = closeButton
+        closeButton.setTitleTextAttributes([.foregroundColor: SubColor.dogerBlue], for: .normal)
+        navigationItem.leftBarButtonItem = closeButton
 
         view.addSubview(tableView)
         tableView.backgroundColor = .black
@@ -57,12 +65,17 @@ final class SoundSelectionViewController: UIViewController {
     }
 
     // MARK: - Actions
+    @objc private func editButtonTapped() {
+        dismiss(animated: true)
+        SoundManager.shared.stopSound()
+    }
+
     @objc private func closeButtonTapped() {
         dismiss(animated: true)
+        SoundManager.shared.stopSound()
     }
 }
 
-// MARK: - UITableViewDataSource, UITableViewDelegate
 extension SoundSelectionViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return sounds.count
