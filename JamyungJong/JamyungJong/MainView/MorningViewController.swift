@@ -93,12 +93,35 @@ class MorningViewController: UIViewController {
         setupUI()
         setupConstraints()
         setupLocationManager()
+        
+        DispatchQueue.main.async {
+            self.setupLocationManager()
+        }
     }
     private func setupLocationManager() {
-         locationManager.delegate = self
-         locationManager.desiredAccuracy = kCLLocationAccuracyBest
-         locationManager.requestWhenInUseAuthorization()
-     }
+        locationManager.delegate = self
+        locationManager.desiredAccuracy = kCLLocationAccuracyBest
+        
+        // 현재 권한 상태 확인
+        switch locationManager.authorizationStatus {
+        case .notDetermined:
+            // 권한이 결정되지 않은 경우에만 요청
+            DispatchQueue.main.async {
+                self.locationManager.requestWhenInUseAuthorization()
+            }
+        case .authorizedWhenInUse, .authorizedAlways:
+            // 이미 권한이 있는 경우 위치 업데이트 시작
+            locationManager.startUpdatingLocation()
+        case .denied, .restricted:
+            // 권한이 거부된 경우 기본 위치(서울) 사용
+            let seoulLat = 37.5665
+            let seoulLon = 126.9780
+            fetchWeatherData(lat: seoulLat, lon: seoulLon)
+        @unknown default:
+            break
+        }
+    }
+
      
      private func fetchWeatherData(lat: Double, lon: Double) {
          let urlString = "\(Configuration.baseURL)/weather?lat=\(lat)&lon=\(lon)&appid=\(Configuration.apiKey)&units=metric"
@@ -198,8 +221,26 @@ class MorningViewController: UIViewController {
             make.centerX.equalToSuperview()
             make.leading.trailing.equalToSuperview().inset(40)
         }
+        
+        locationButton.addTarget(self, action: #selector(locationButtonTapped), for: .touchUpInside)
+
     }
     
+    @objc private func locationButtonTapped() {
+        if CLLocationManager.locationServicesEnabled() {
+            switch locationManager.authorizationStatus {
+            case .notDetermined, .restricted, .denied:
+                // 설정으로 이동하기
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(url)
+                }
+            case .authorizedWhenInUse, .authorizedAlways:
+                locationManager.startUpdatingLocation()
+            @unknown default:
+                break
+            }
+        }
+    }
 
     @objc private func fortuneImageTapped() {
         if isFortuneCracked {
@@ -218,12 +259,26 @@ class MorningViewController: UIViewController {
                     // 메시지 표시 애니메이션
                     self.fortuneMessageLabel.alpha = 1
                     self.showFortuneMessage()
+                } completion: { _ in
+                    // 2초 후에 WeatherViewController로 전환
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                        self.navigateToWeatherViewController()
+                    }
                 }
             }
             
             isFortuneCracked = true
         }
     }
+
+    // WeatherViewController로 전환하는 메서드 추가
+    private func navigateToWeatherViewController() {
+        let weatherVC = WeatherViewController()
+        weatherVC.modalPresentationStyle = .fullScreen
+        weatherVC.modalTransitionStyle = .crossDissolve
+        present(weatherVC, animated: true)
+    }
+
     
     private func resetFortuneCookie() {
         isFortuneCracked = false
@@ -317,25 +372,56 @@ extension MorningViewController: CLLocationManagerDelegate {
         case .authorizedWhenInUse, .authorizedAlways:
             locationManager.startUpdatingLocation()
             locationButton.setTitle("정확한 위치: 켜짐", for: .normal)
-        default:
+            
+        case .denied, .restricted:
+            locationButton.setTitle("정확한 위치: 꺼짐", for: .normal)
+            // 위치 권한이 거부된 경우 기본 위치(서울)의 날씨 정보를 가져올 수 있습니다
+            let seoulLat = 37.5665
+            let seoulLon = 126.9780
+            fetchWeatherData(lat: seoulLat, lon: seoulLon)
+            
+        case .notDetermined:
+            locationManager.requestWhenInUseAuthorization()
+            locationButton.setTitle("정확한 위치: 꺼짐", for: .normal)
+            
+        @unknown default:
             locationButton.setTitle("정확한 위치: 꺼짐", for: .normal)
         }
     }
     
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.last else { return }
-        currentLocation = location
+        
+        // 위치 업데이트가 성공하면 위치 업데이트를 중지
         locationManager.stopUpdatingLocation()
         
-        // 위치가 업데이트되면 날씨 데이터를 가져옵니다
+        // 현재 위치 저장
+        currentLocation = location
+        
+        // 날씨 데이터 가져오기
         fetchWeatherData(
             lat: location.coordinate.latitude,
             lon: location.coordinate.longitude
         )
+        
+        // 위치 정보로 도시 이름 가져오기
+        let geocoder = CLGeocoder()
+        geocoder.reverseGeocodeLocation(location) { [weak self] (placemarks, error) in
+            if let cityName = placemarks?.first?.locality {
+                DispatchQueue.main.async {
+                    self?.locationLabel.text = cityName
+                }
+            }
+        }
     }
     
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         print("Location error: \(error.localizedDescription)")
         locationButton.setTitle("위치 오류", for: .normal)
+        
+        // 위치 서비스 오류 시 서울의 날씨 정보를 가져옵니다
+        let seoulLat = 37.5665
+        let seoulLon = 126.9780
+        fetchWeatherData(lat: seoulLat, lon: seoulLon)
     }
 }
