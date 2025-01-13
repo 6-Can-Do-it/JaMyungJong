@@ -11,10 +11,12 @@ import UIKit
 class CoreDataManager {
     static let shared = CoreDataManager()
     
+    var recentTimers: [(hours: Int, minutes: Int, seconds: Int)] = []
+    
     private init() {}
     
     lazy var persistentContainer: NSPersistentContainer = {
-        let container = NSPersistentContainer(name: "YourProjectName")
+        let container = NSPersistentContainer(name: "JamyungJong")
         container.loadPersistentStores { (_, error) in
             if let error = error as NSError? {
                 fatalError("Unresolved error \(error), \(error.userInfo)")
@@ -38,31 +40,32 @@ class CoreDataManager {
         }
     }
     
-    // 최근 타이머 저장
-    func saveRecentTimer(hours: Int, minutes: Int, seconds: Int) {
-        let timer = RecentTimer(context: context)
-        timer.hours = Int32(hours)
-        timer.minutes = Int32(minutes)
-        timer.seconds = Int32(seconds)
-        saveContext()
+    func saveRecentTimer(_ timer: (hours: Int, minutes: Int, seconds: Int)) {
+        let context = CoreDataManager.shared.context
+        let newTimer = RecentTimerEntities(context: context)
+        newTimer.hours = Int32(timer.hours)
+        newTimer.minutes = Int32(timer.minutes)
+        newTimer.seconds = Int32(timer.seconds)
+
+        CoreDataManager.shared.saveContext()
     }
     
-    // 최근 타이머 불러오기
-    func fetchRecentTimers() -> [RecentTimer] {
-        let fetchRequest: NSFetchRequest<RecentTimer> = RecentTimer.fetchRequest()
-        fetchRequest.sortDescriptors = [NSSortDescriptor(key: "hours", ascending: false)]
-        
+    func loadRecentTimers() {
+        let context = CoreDataManager.shared.context
+        let fetchRequest: NSFetchRequest<RecentTimerEntities> = RecentTimerEntities.fetchRequest()
+
         do {
-            return try context.fetch(fetchRequest)
+            let timers = try context.fetch(fetchRequest)
+            recentTimers = timers.map { (hours: Int($0.hours), minutes: Int($0.minutes), seconds: Int($0.seconds)) }
         } catch {
-            print("Failed to fetch recent timers: \(error.localizedDescription)")
-            return []
+            print("Failed to fetch timers: \(error)")
         }
     }
     
     // 최근 타이머 삭제
-    func deleteRecentTimer(_ timer: RecentTimer) {
+    func deleteRecentTimer(_ timer: RecentTimerEntities) {
         context.delete(timer)
         saveContext()
+        loadRecentTimers()
     }
 }

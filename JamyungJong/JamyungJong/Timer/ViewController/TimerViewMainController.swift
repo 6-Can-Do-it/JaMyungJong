@@ -7,6 +7,7 @@
 
 import UIKit
 import SnapKit
+import CoreData
 
 final class TimerViewMainController: UIViewController {
     
@@ -25,6 +26,8 @@ final class TimerViewMainController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        CoreDataManager.shared.loadRecentTimers()
+        recentTimers = CoreDataManager.shared.recentTimers
         setupPickerView()
         setupActions()
         setupNavigationBar()
@@ -108,6 +111,7 @@ final class TimerViewMainController: UIViewController {
         let newTimer = TimerModel(hours: selectedTime.hours, minutes: selectedTime.minutes, seconds: selectedTime.seconds)
         presentTimers.append((newTimer.hours, newTimer.minutes, newTimer.seconds, newTimer.remainingTime, nil))
         recentTimers.insert(selectedTime, at: 0)
+        CoreDataManager.shared.saveRecentTimer(selectedTime)
 
         let detailsVC = TimerDetailsViewController()
         detailsVC.recentTimers = recentTimers
@@ -173,8 +177,27 @@ extension TimerViewMainController: UITableViewDataSource, UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
         if editingStyle == .delete {
-            recentTimers.remove(at: indexPath.row) // 데이터 소스에서 삭제
-            tableView.deleteRows(at: [indexPath], with: .automatic) // 테이블 뷰에서 삭제
+            // Core Data에서 삭제할 엔티티 찾기
+            let timerToDelete = recentTimers[indexPath.row]
+            let context = CoreDataManager.shared.context
+            let fetchRequest: NSFetchRequest<RecentTimerEntities> = RecentTimerEntities.fetchRequest()
+
+            do {
+                let timers = try context.fetch(fetchRequest)
+                if let entityToDelete = timers.first(where: {
+                    Int($0.hours) == timerToDelete.hours &&
+                    Int($0.minutes) == timerToDelete.minutes &&
+                    Int($0.seconds) == timerToDelete.seconds
+                }) {
+                    CoreDataManager.shared.deleteRecentTimer(entityToDelete)
+                }
+            } catch {
+                print("Failed to delete timer: \(error)")
+            }
+
+            // 데이터 소스에서 삭제
+            recentTimers.remove(at: indexPath.row)
+            tableView.deleteRows(at: [indexPath], with: .automatic)
         }
     }
     
