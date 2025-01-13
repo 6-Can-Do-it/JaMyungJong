@@ -171,6 +171,17 @@ extension TimerViewMainController: UITableViewDataSource, UITableViewDelegate {
         return cell
     }
     
+    func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
+        if editingStyle == .delete {
+            recentTimers.remove(at: indexPath.row) // 데이터 소스에서 삭제
+            tableView.deleteRows(at: [indexPath], with: .automatic) // 테이블 뷰에서 삭제
+        }
+    }
+    
+    func tableView(_ tableView: UITableView, titleForDeleteConfirmationButtonForRowAt indexPath: IndexPath) -> String? {
+        return "삭제"
+    }
+    
     func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
         guard !recentTimers.isEmpty else { return nil }
         return createHeaderView(title: "최근 항목")

@@ -110,6 +110,12 @@ final class TimerDetailsViewController: UIViewController {
         } else {
             stopCountdown(for: index)
             
+//            presentTimers.remove(at: index)
+//                DispatchQueue.main.async { [weak self] in
+//                    self?.timerDetailsView.tableView.deleteRows(at: [IndexPath(row: index, section: 0)], with: .fade)
+//                }
+//            }
+            
             // 모든 타이머가 종료되었는지 확인
             if areAllTimersFinished() {
                 // 타이머 셀 초기화
@@ -195,6 +201,17 @@ extension TimerDetailsViewController: UITableViewDataSource, UITableViewDelegate
             
             return cell
         }
+    }
+    
+    func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
+        if editingStyle == .delete {
+            recentTimers.remove(at: indexPath.row) // 데이터 소스에서 삭제
+            tableView.deleteRows(at: [indexPath], with: .automatic) // 테이블 뷰에서 삭제
+        }
+    }
+    
+    func tableView(_ tableView: UITableView, titleForDeleteConfirmationButtonForRowAt indexPath: IndexPath) -> String? {
+        return "삭제"
     }
     
     func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
