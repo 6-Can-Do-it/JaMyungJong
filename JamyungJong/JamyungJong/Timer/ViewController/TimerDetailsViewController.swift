@@ -8,6 +8,7 @@
 import UIKit
 import SnapKit
 import UserNotifications
+import CoreData
 
 final class TimerDetailsViewController: UIViewController {
     
@@ -16,8 +17,9 @@ final class TimerDetailsViewController: UIViewController {
     
     var recentTimers: [(hours: Int, minutes: Int, seconds: Int, soundName: String)] = []
     var presentTimers: [(hours: Int, minutes: Int, seconds: Int, remainingTime: Int, countdownTimer: Timer?, soundName: String)] = []
-    
     private var isTimerRunning = false
+    private var isEditingMode: Bool = false
+    private var selectedRows: [IndexPath] = []
     
     override func loadView() {
         view = timerDetailsView
@@ -49,15 +51,6 @@ final class TimerDetailsViewController: UIViewController {
         )
         editButton.setTitleTextAttributes([.foregroundColor: SubColor.dogerBlue], for: .normal)
         navigationItem.leftBarButtonItem = editButton
-        
-        let plusButton = UIBarButtonItem(
-            image: UIImage(systemName: "plus"),
-            style: .plain,
-            target: self,
-            action: #selector(plusButtonTapped)
-        )
-        plusButton.tintColor = SubColor.dogerBlue
-        navigationItem.rightBarButtonItem = plusButton
     }
     
     // MARK: - UI Setup
@@ -69,11 +62,45 @@ final class TimerDetailsViewController: UIViewController {
     }
     
     @objc func editButtonTapped() {
-        
+        isEditingMode.toggle()
+        selectedRows.removeAll() // 기존 선택 상태 초기화
+        timerDetailsView.tableView.setEditing(isEditingMode, animated: true)
+
+        if isEditingMode {
+            navigationItem.leftBarButtonItem?.title = "완료"
+        } else {
+            deleteSelectedRows() // 완료 버튼 클릭 시 선택된 항목 삭제
+            navigationItem.leftBarButtonItem?.title = "편집"
+            navigationItem.rightBarButtonItem = nil
+        }
     }
     
-    @objc func plusButtonTapped() {
+    @objc private func deleteSelectedRows() {
+        // 선택된 셀들 삭제
+        let rowsToDelete = selectedRows.sorted(by: { $0.row > $1.row }) // 역순으로 정렬
+        for indexPath in rowsToDelete {
+            let timerToDelete = recentTimers[indexPath.row]
+            let context = CoreDataManager.shared.context
+            let fetchRequest: NSFetchRequest<RecentTimerEntities> = RecentTimerEntities.fetchRequest()
+            
+            do {
+                let timers = try context.fetch(fetchRequest)
+                if let entityToDelete = timers.first(where: {
+                    Int($0.hours) == timerToDelete.hours &&
+                    Int($0.minutes) == timerToDelete.minutes &&
+                    Int($0.seconds) == timerToDelete.seconds
+                }) {
+                    CoreDataManager.shared.deleteRecentTimer(entityToDelete)
+                }
+            } catch {
+                print("Failed to delete timer: \(error)")
+            }
+            
+            recentTimers.remove(at: indexPath.row)
+        }
         
+        timerDetailsView.tableView.deleteRows(at: rowsToDelete, with: .automatic)
+        selectedRows.removeAll()
     }
     
     private func startCountdown(for index: Int) {
@@ -224,13 +251,48 @@ extension TimerDetailsViewController: UITableViewDataSource, UITableViewDelegate
     
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
         if editingStyle == .delete {
-            recentTimers.remove(at: indexPath.row) // 데이터 소스에서 삭제
+            if indexPath.section == 0 { // 현재 타이머 삭제
+                stopCountdown(for: indexPath.row) // 타이머 멈추기
+                presentTimers.remove(at: indexPath.row) // 데이터 소스에서 삭제
+            } else { // 최근 타이머 삭제
+                let timerToDelete = recentTimers[indexPath.row]
+                let context = CoreDataManager.shared.context
+                let fetchRequest: NSFetchRequest<RecentTimerEntities> = RecentTimerEntities.fetchRequest()
+                
+                do {
+                    let timers = try context.fetch(fetchRequest)
+                    if let entityToDelete = timers.first(where: {
+                        Int($0.hours) == timerToDelete.hours &&
+                        Int($0.minutes) == timerToDelete.minutes &&
+                        Int($0.seconds) == timerToDelete.seconds
+                    }) {
+                        CoreDataManager.shared.deleteRecentTimer(entityToDelete)
+                    }
+                } catch {
+                    print("Failed to delete timer: \(error)")
+                }
+                
+                recentTimers.remove(at: indexPath.row) // 데이터 소스에서 삭제
+            }
+            
             tableView.deleteRows(at: [indexPath], with: .automatic) // 테이블 뷰에서 삭제
         }
     }
     
     func tableView(_ tableView: UITableView, titleForDeleteConfirmationButtonForRowAt indexPath: IndexPath) -> String? {
         return "삭제"
+    }
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        if isEditingMode {
+            selectedRows.append(indexPath)
+        }
+    }
+
+    func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath) {
+        if isEditingMode {
+            selectedRows.removeAll { $0 == indexPath }
+        }
     }
     
     func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {

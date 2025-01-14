@@ -25,7 +25,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         window?.makeKeyAndVisible()
         
         let window = UIWindow(frame: UIScreen.main.bounds)
-        window.rootViewController = UINavigationController(rootViewController: TimerViewMainController())
+        window.rootViewController = UINavigationController(rootViewController: TabBarController())
         window.makeKeyAndVisible()
         self.window = window
         // 알림 권한 요청
