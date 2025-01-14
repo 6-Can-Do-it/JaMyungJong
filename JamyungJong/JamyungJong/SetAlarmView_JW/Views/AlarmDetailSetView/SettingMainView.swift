@@ -85,7 +85,9 @@ class SettingMainView: UIView {
         let newAlarm = AlarmData(
             time: selectedDate,
             repeatDays: daySetView.getSelectedDays(),
-            isEnabled: true
+            isEnabled: true,
+            sound: soundSetView.getSelectedSound(),
+            label: ""
         )
         delegate?.didTapSaveButton(alarm: newAlarm)
     }
