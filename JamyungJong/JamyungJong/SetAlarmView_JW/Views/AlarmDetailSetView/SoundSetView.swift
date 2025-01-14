@@ -61,7 +61,7 @@ class SoundSetView: UIView, SoundSelectionDelegate {
         if uiSwitch.isOn {
             // 볼륨값을 0.1 단위로 반올림하여 더 부드럽게 조절
             let roundedVolume = round(sender.value * 10) / 10
-            //SoundManager.shared.setVolume(roundedVolume)
+            SoundManager.shared.setVolume(roundedVolume)
         }
     }
     
@@ -187,10 +187,7 @@ class CustomSlider: UISlider {
         return newBounds
     }
 }
-//
-//@available(iOS 17.0, *)
-//#Preview {
-//    SetAlarmViewController()
-//}
-//
-//
+@available(iOS 17.0, *)
+#Preview {
+    UINavigationController(rootViewController: AlarmListViewController())
+}

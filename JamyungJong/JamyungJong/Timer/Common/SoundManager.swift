@@ -28,6 +28,10 @@ class SoundManager {
         }
     }
     
+    func setVolume(_ volume: Float) {
+            audioPlayer?.volume = volume
+        }
+    
     func stopSound() {
         audioPlayer?.stop()
         audioPlayer = nil
