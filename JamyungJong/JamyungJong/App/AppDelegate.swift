@@ -24,7 +24,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         window?.rootViewController = tabBarController
         window?.makeKeyAndVisible()
         
-
         let window = UIWindow(frame: UIScreen.main.bounds)
         window.rootViewController = UINavigationController(rootViewController: TabBarController())
         window.makeKeyAndVisible()
@@ -37,8 +36,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 print("알림 권한 거부")
             }
         }
-
-
         return true
     }
     

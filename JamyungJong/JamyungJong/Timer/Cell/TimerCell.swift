@@ -82,7 +82,7 @@ final class TimerCell: UITableViewCell {
         
         mainLabel.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(16)
-            make.leading.equalToSuperview()
+            make.leading.equalToSuperview().offset(16)
         }
         
         subLabel.snp.makeConstraints { make in

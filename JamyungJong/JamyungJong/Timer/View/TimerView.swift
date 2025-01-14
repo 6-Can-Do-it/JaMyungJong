@@ -184,7 +184,7 @@ final class TimerView: UIView {
         
         recentTimersTableView.snp.makeConstraints { make in
             make.top.equalTo(containerView.snp.bottom).offset(24)
-            make.left.right.bottom.equalToSuperview().inset(20)
+            make.left.right.bottom.equalToSuperview()
         }
     }
 }

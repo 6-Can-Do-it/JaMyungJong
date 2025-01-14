@@ -36,6 +36,7 @@ final class TimerViewMainController: UIViewController {
         setupNavigationBar()
         timerView.recentTimersTableView.dataSource = self
         timerView.recentTimersTableView.delegate = self
+    
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -213,8 +214,13 @@ extension TimerViewMainController: UITableViewDataSource, UITableViewDelegate {
             self?.selectedSound = selectedTimer?.soundName ?? "default"
             self?.startTapped()
         }, for: .touchUpInside)
+        
+        cell.configure(hours: timer.hours, minutes: timer.minutes, seconds: timer.seconds)
+
         return cell
     }
+    
+ 
     
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
         if editingStyle == .delete {
@@ -273,7 +279,7 @@ extension TimerViewMainController: UITableViewDataSource, UITableViewDelegate {
         
         headerView.addSubview(label)
         label.snp.makeConstraints { make in
-            make.leading.equalToSuperview()
+            make.leading.equalToSuperview().offset(16)
             make.centerY.equalToSuperview()
         }
         

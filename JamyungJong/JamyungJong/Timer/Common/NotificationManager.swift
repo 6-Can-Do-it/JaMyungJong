@@ -37,7 +37,6 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         
         // 사용자 지정 소리 설정
         if let soundName = soundName, !soundName.isEmpty {
-            
             content.sound = UNNotificationSound(named: UNNotificationSoundName(rawValue: "\(soundName).mp3"))
         } else {
             content.sound = UNNotificationSound(named: UNNotificationSoundName(rawValue: "Ringtone.mp3"))
@@ -61,33 +60,38 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         }
     }
     
-//    func scheduleNotification(withSoundName soundName: String?) {
-//        let content = UNMutableNotificationContent()
-//        content.title = "자명종"
-//        content.body = "타이머가 종료되었습니다."
-//        
-//        // 사용자 지정 소리 설정
-//        if let soundName = soundName, !soundName.isEmpty {
-//            content.sound = nil
-//            SoundManager.shared.playSound(fromAssetsNamed: soundName)
-//        } else {
-//            content.sound = .default
-//        }
-//        
-//        let request = UNNotificationRequest(
-//            identifier: UUID().uuidString,
-//            content: content,
-//            trigger: nil
-//        )
-//        
-//        UNUserNotificationCenter.current().add(request) { error in
-//            if let error = error {
-//                print("알림 스케줄링 오류: \(error.localizedDescription)")
-//            } else {
-//                print("알림이 성공적으로 스케줄링되었습니다.")
-//            }
-//        }
-//    }
+    /// 특정 시간에 알림 스케줄링
+    func scheduleAlarmNotification(at date: Date, withSoundName soundName: String?) {
+        let content = UNMutableNotificationContent()
+        content.title = "자명종"
+        content.body = "알람이 울립니다!"
+        
+        // 사용자 지정 소리 설정
+        if let soundName = soundName, !soundName.isEmpty {
+            content.sound = UNNotificationSound(named: UNNotificationSoundName(rawValue: "\(soundName).mp3"))
+        } else {
+            content.sound = UNNotificationSound(named: UNNotificationSoundName(rawValue: "Ringtone.mp3"))
+        }
+        
+        // 알람 시간 트리거 설정
+        let calendar = Calendar.current
+        let components = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: date)
+        let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+        
+        let request = UNNotificationRequest(
+            identifier: UUID().uuidString,
+            content: content,
+            trigger: trigger
+        )
+        
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error = error {
+                print("알람 스케줄링 오류: \(error.localizedDescription)")
+            } else {
+                print("알람이 성공적으로 스케줄링되었습니다.")
+            }
+        }
+    }
     
     // UNUserNotificationCenterDelegate 메서드 구현
     func userNotificationCenter(
