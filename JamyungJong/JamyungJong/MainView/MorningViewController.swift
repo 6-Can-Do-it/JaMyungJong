@@ -86,6 +86,24 @@ class MorningViewController: UIViewController {
     
     private let locationManager = CLLocationManager()
     private var currentLocation: CLLocation?
+   
+    private func setupGradientBackground() {
+        let gradientLayer = CAGradientLayer()
+        gradientLayer.frame = view.bounds
+        
+        // 그라데이션 색상 설정
+        gradientLayer.colors = [
+            UIColor(red: 176/255, green: 196/255, blue: 222/255, alpha: 1.0).cgColor ,
+            UIColor(red: 135/255, green: 206/255, blue: 235/255, alpha: 1.0).cgColor
+        ]
+        
+        // 그라데이션 방향 설정
+        gradientLayer.startPoint = CGPoint(x: 0.0, y: 0.0)
+        gradientLayer.endPoint = CGPoint(x: 1.0, y: 1.0)
+        
+        // 그라데이션 레이어를 view의 맨 뒤에 삽입
+        view.layer.insertSublayer(gradientLayer, at: 0)
+    }
 
     
     override func viewDidLoad() {
@@ -93,6 +111,7 @@ class MorningViewController: UIViewController {
         setupUI()
         setupConstraints()
         setupLocationManager()
+        setupGradientBackground()
         
         DispatchQueue.main.async {
             self.setupLocationManager()
@@ -121,50 +140,50 @@ class MorningViewController: UIViewController {
             break
         }
     }
-
-     
-     private func fetchWeatherData(lat: Double, lon: Double) {
-         let urlString = "\(Configuration.baseURL)/weather?lat=\(lat)&lon=\(lon)&appid=\(Configuration.apiKey)&units=metric"
-         
-         guard let url = URL(string: urlString) else { return }
-         
-         let task = URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
-             guard let self = self else { return }
-             
-             if let error = error {
-                 print("Error: \(error.localizedDescription)")
-                 return
-             }
-             
-             guard let data = data else { return }
-             
-             do {
-                 let decoder = JSONDecoder()
-                 let weatherData = try decoder.decode(WeatherModel.self, from: data)
-                 
-                 DispatchQueue.main.async {
-                     self.updateWeatherUI(with: weatherData)
-                 }
-             } catch {
-                 print("Decoding error: \(error)")
-             }
-         }
-         task.resume()
-     }
-     
-     private func updateWeatherUI(with weather: WeatherModel) {
-         // 온도 업데이트
-         let temperature = Int(round(weather.main.temp))
-         temperatureLabel.text = "\(temperature)°C"
-         
-         // 날씨 아이콘 업데이트
-         if let weatherCondition = weather.weather.first {
-             updateWeatherIcon(with: weatherCondition.icon)
-             
-             // 날씨 상태 업데이트
-             locationLabel.text = weatherCondition.main.capitalized
-         }
-     }
+    
+    
+    private func fetchWeatherData(lat: Double, lon: Double) {
+        let urlString = "\(Configuration.baseURL)/weather?lat=\(lat)&lon=\(lon)&appid=\(Configuration.apiKey)&units=metric"
+        
+        guard let url = URL(string: urlString) else { return }
+        
+        let task = URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
+            guard let self = self else { return }
+            
+            if let error = error {
+                print("Error: \(error.localizedDescription)")
+                return
+            }
+            
+            guard let data = data else { return }
+            
+            do {
+                let decoder = JSONDecoder()
+                let weatherData = try decoder.decode(WeatherModel.self, from: data)
+                
+                DispatchQueue.main.async {
+                    self.updateWeatherUI(with: weatherData)
+                }
+            } catch {
+                print("Decoding error: \(error)")
+            }
+        }
+        task.resume()
+    }
+    
+    private func updateWeatherUI(with weather: WeatherModel) {
+        // 온도 업데이트
+        let temperature = Int(round(weather.main.temp))
+        temperatureLabel.text = "\(temperature)°C"
+        
+        // 날씨 아이콘 업데이트
+        if let weatherCondition = weather.weather.first {
+            updateWeatherIcon(with: weatherCondition.icon)
+            
+            // 날씨 상태 업데이트
+            locationLabel.text = weatherCondition.main.capitalized
+        }
+    }
     
     
     
@@ -223,7 +242,7 @@ class MorningViewController: UIViewController {
         }
         
         locationButton.addTarget(self, action: #selector(locationButtonTapped), for: .touchUpInside)
-
+        
     }
     
     @objc private func locationButtonTapped() {
@@ -241,7 +260,7 @@ class MorningViewController: UIViewController {
             }
         }
     }
-
+    
     @objc private func fortuneImageTapped() {
         if isFortuneCracked {
             // 이미 깨진 상태면 리셋
@@ -270,15 +289,20 @@ class MorningViewController: UIViewController {
             isFortuneCracked = true
         }
     }
-
+    
     // WeatherViewController로 전환하는 메서드 추가
+    //    private func navigateToWeatherViewController() {
+    //        let weatherVC = WeatherViewController()
+    //        weatherVC.modalPresentationStyle = .fullScreen
+    //        weatherVC.modalTransitionStyle = .crossDissolve
+    //        present(weatherVC, animated: true)
+    //    }
     private func navigateToWeatherViewController() {
         let weatherVC = WeatherViewController()
-        weatherVC.modalPresentationStyle = .fullScreen
-        weatherVC.modalTransitionStyle = .crossDissolve
-        present(weatherVC, animated: true)
+        navigationController?.pushViewController(weatherVC, animated: true)
     }
-
+    
+    
     
     private func resetFortuneCookie() {
         isFortuneCracked = false
@@ -327,7 +351,27 @@ class MorningViewController: UIViewController {
             "당신의 꿈을 향한 발걸음이 더욱 가벼워질 거예요",
             "오늘 하루는 행운으로 가득할 거예요",
             "새로운 도전이 값진 경험이 될 거예요",
-            "당신의 하루가 반짝이는 순간으로 가득할 거예요"
+            "당신의 하루가 반짝이는 순간으로 가득할 거예요",
+            "오늘은 우산을 챙기는 게 좋을지도 몰라요...",
+            "조금 힘든 하루가 될 수 있어요, 하지만 이겨낼 수 있어요",
+            "예상치 못한 지출이 생길 수 있으니 주의하세요",
+            "오늘은 중요한 결정을 미루는 게 좋을 것 같아요",
+            "평소보다 피곤함을 느낄 수 있는 하루네요",
+            "마음에 들지 않는 소식을 들을 수 있어요",
+            "가까운 사람과 작은 다툼이 있을 수 있어요",
+            "계획했던 일이 예상과 다르게 진행될 수 있어요",
+            "건강관리에 특히 신경 써야 할 것 같아요",
+            "서두르다 실수할 수 있으니 여유를 가지세요",
+            "오늘은 교통이 혼잡할 수 있으니 일찍 출발하세요",
+            "집중력이 떨어질 수 있는 하루예요, 꼼꼼히 확인하세요",
+            "평소보다 스트레스를 많이 받을 수 있어요",
+            "기술적인 문제가 발생할 수 있으니 백업을 챙기세요",
+            "예기치 못한 방해요소가 생길 수 있어요",
+            "오늘은 욕심을 부리지 않는 게 좋을 것 같아요",
+            "평소보다 체력이 떨어질 수 있으니 무리하지 마세요",
+            "작은 실수가 큰 문제로 이어질 수 있어요, 신중하세요",
+            "기대했던 일이 지연될 수 있어요, 인내심을 가지세요",
+            "주변 사람들의 기분이 좋지 않을 수 있으니 조심하세요"
         ]
         
         let randomMessage = FortuneMessage.randomElement() ?? FortuneMessage[0]
