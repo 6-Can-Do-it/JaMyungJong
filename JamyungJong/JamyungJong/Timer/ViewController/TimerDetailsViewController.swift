@@ -314,7 +314,7 @@ extension TimerDetailsViewController: UITableViewDataSource, UITableViewDelegate
         
         headerView.addSubview(label)
         label.snp.makeConstraints { make in
-            make.leading.equalToSuperview()
+            make.leading.equalToSuperview().offset(16)
             make.centerY.equalToSuperview()
         }
         

@@ -51,7 +51,7 @@ final class TimerDetailsView: UIView {
 
         tableView.snp.makeConstraints { make in
             make.top.equalTo(titleLabel.snp.bottom)
-            make.left.right.bottom.equalToSuperview().inset(20)
+            make.left.right.bottom.equalToSuperview()
         }
     }
 }
