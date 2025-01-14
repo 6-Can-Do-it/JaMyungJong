@@ -5,14 +5,16 @@
 //  Created by 황석범 on 1/14/25.
 //
 
-import Foundation
 import UserNotifications
 
-final class NotificationManager {
+final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     // 싱글톤 인스턴스
     static let shared = NotificationManager()
     
-    private init() {} // 외부에서 초기화 방지
+    private override init() {
+        super.init()
+        UNUserNotificationCenter.current().delegate = self
+    }
 
     /// 알림 권한 요청
     func requestAuthorization(completion: @escaping (Bool) -> Void) {
@@ -28,14 +30,21 @@ final class NotificationManager {
     }
     
     /// 타이머 종료 알림 스케줄링
-    func scheduleNotification(for timer: (hours: Int, minutes: Int, seconds: Int, remainingTime: Int, countdownTimer: Timer?)) {
+    func scheduleNotification(withSoundName soundName: String?, after seconds: TimeInterval) {
         let content = UNMutableNotificationContent()
-        content.title = "타이머 종료" // 알림 제목
-        content.body = "설정된 타이머가 종료되었습니다." // 알림 내용
-        content.sound = .default // 기본 알림 소리
+        content.title = "자명종"
+        content.body = "타이머가 종료되었습니다."
         
-        // 트리거 설정: 지정된 시간 후 알림 표시
-        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: TimeInterval(timer.remainingTime), repeats: false)
+        // 사용자 지정 소리 설정
+        if let soundName = soundName, !soundName.isEmpty {
+            
+            content.sound = UNNotificationSound(named: UNNotificationSoundName(rawValue: "\(soundName).mp3"))
+        } else {
+            content.sound = UNNotificationSound(named: UNNotificationSoundName(rawValue: "Ringtone.mp3"))
+        }
+        
+        // Time Interval Trigger 설정
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: seconds, repeats: false)
         
         let request = UNNotificationRequest(
             identifier: UUID().uuidString,
@@ -45,10 +54,61 @@ final class NotificationManager {
         
         UNUserNotificationCenter.current().add(request) { error in
             if let error = error {
-                print("알림 스케줄링 오류: \(error)")
+                print("알림 스케줄링 오류: \(error.localizedDescription)")
             } else {
                 print("알림이 성공적으로 스케줄링되었습니다.")
             }
         }
+    }
+    
+//    func scheduleNotification(withSoundName soundName: String?) {
+//        let content = UNMutableNotificationContent()
+//        content.title = "자명종"
+//        content.body = "타이머가 종료되었습니다."
+//        
+//        // 사용자 지정 소리 설정
+//        if let soundName = soundName, !soundName.isEmpty {
+//            content.sound = nil
+//            SoundManager.shared.playSound(fromAssetsNamed: soundName)
+//        } else {
+//            content.sound = .default
+//        }
+//        
+//        let request = UNNotificationRequest(
+//            identifier: UUID().uuidString,
+//            content: content,
+//            trigger: nil
+//        )
+//        
+//        UNUserNotificationCenter.current().add(request) { error in
+//            if let error = error {
+//                print("알림 스케줄링 오류: \(error.localizedDescription)")
+//            } else {
+//                print("알림이 성공적으로 스케줄링되었습니다.")
+//            }
+//        }
+//    }
+    
+    // UNUserNotificationCenterDelegate 메서드 구현
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        completionHandler([.sound, .badge, .banner])
+    }
+    
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        // 기본 동작 (배너 클릭 또는 올림)
+        if response.actionIdentifier == UNNotificationDefaultActionIdentifier {
+            print("Default action triggered, stopping sound.")
+            SoundManager.shared.stopSound()
+        }
+        
+        completionHandler()
     }
 }

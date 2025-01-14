@@ -12,12 +12,12 @@ import CoreData
 final class TimerViewMainController: UIViewController {
     
     private let timerView = TimerView()
-    private var recentTimers: [(hours: Int, minutes: Int, seconds: Int)] = []
-    private var selectedTime: (hours: Int, minutes: Int, seconds: Int) = (0, 0, 0)
-    private var presentTimers: [(hours: Int, minutes: Int, seconds: Int, remainingTime: Int, countdownTimer: Timer?)] = []
+    private var recentTimers: [(hours: Int, minutes: Int, seconds: Int, soundName: String)] = []
+    private var selectedTime: (hours: Int, minutes: Int, seconds: Int, soundName: String) = (0, 0, 0, "")
+    var presentTimers: [(hours: Int, minutes: Int, seconds: Int, remainingTime: Int, countdownTimer: Timer?, soundName: String)] = []
     private var countdownTimer: Timer?
     private var remainingTime: Int = 0
-    private var selectedSound: String = "은하수"
+    private var selectedSound: String = "Arpeggio"
     private var isTimerRunning = false
 
     override func loadView() {
@@ -109,9 +109,12 @@ final class TimerViewMainController: UIViewController {
         if isTimerRunning { return }
 
         let newTimer = TimerModel(hours: selectedTime.hours, minutes: selectedTime.minutes, seconds: selectedTime.seconds)
-        presentTimers.append((newTimer.hours, newTimer.minutes, newTimer.seconds, newTimer.remainingTime, nil))
-        recentTimers.insert(selectedTime, at: 0)
-        CoreDataManager.shared.saveRecentTimer(selectedTime)
+        // `presentTimers`에 새 타이머 추가 (소리 포함)
+        presentTimers.append((newTimer.hours, newTimer.minutes, newTimer.seconds, newTimer.remainingTime, nil, selectedSound))
+        
+        // `recentTimers`에 새 타이머 추가 (소리 포함)
+        recentTimers.insert((selectedTime.hours, selectedTime.minutes, selectedTime.seconds, selectedSound), at: 0)
+        CoreDataManager.shared.saveRecentTimer((selectedTime.hours, selectedTime.minutes, selectedTime.seconds, selectedSound))
 
         let detailsVC = TimerDetailsViewController()
         detailsVC.recentTimers = recentTimers
@@ -158,18 +161,15 @@ extension TimerViewMainController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "RecentTimerCell", for: indexPath) as! RecentTimerCell
         let timer = recentTimers[indexPath.row]
-        
-        if let text = timerView.value1.text, !text.isEmpty {
-            cell.subLabel.text = text
-        } else {
-            cell.configure(hours: timer.hours, minutes: timer.minutes, seconds: timer.seconds)
-        }
-        
+
+        cell.configure(hours: timer.hours, minutes: timer.minutes, seconds: timer.seconds)
+
         cell.playButton.tag = indexPath.row
         cell.playButton.removeTarget(nil, action: nil, for: .allEvents)
         cell.playButton.addAction(UIAction { [weak self] _ in
             let selectedTimer = self?.recentTimers[cell.playButton.tag]
-            self?.selectedTime = selectedTimer ?? (0, 0, 0)
+            self?.selectedTime = (selectedTimer?.hours ?? 0, selectedTimer?.minutes ?? 0, selectedTimer?.seconds ?? 0, selectedTimer?.soundName ?? "")
+            self?.selectedSound = selectedTimer?.soundName ?? "default"
             self?.startTapped()
         }, for: .touchUpInside)
         return cell
@@ -232,5 +232,19 @@ extension TimerViewMainController: SoundSelectionDelegate {
     func didSelectSound(_ sound: String) {
         selectedSound = sound
         timerView.value2.setTitle(sound, for: .normal)
+        
+        // 현재 타이머에 소리 업데이트
+        if let currentTimerIndex = presentTimers.firstIndex(where: { $0.remainingTime == remainingTime }) {
+            presentTimers[currentTimerIndex].soundName = sound
+        }
+        
+        // 최근 타이머에도 소리 업데이트
+        if let recentTimerIndex = recentTimers.firstIndex(where: {
+            $0.hours == selectedTime.hours &&
+            $0.minutes == selectedTime.minutes &&
+            $0.seconds == selectedTime.seconds
+        }) {
+            recentTimers[recentTimerIndex].soundName = sound
+        }
     }
 }

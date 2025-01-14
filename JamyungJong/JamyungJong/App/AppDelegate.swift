@@ -7,6 +7,7 @@
 
 import UIKit
 import CoreData
+import UserNotifications
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -23,6 +24,18 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         window?.rootViewController = tabBarController
         window?.makeKeyAndVisible()
         
+        let window = UIWindow(frame: UIScreen.main.bounds)
+        window.rootViewController = UINavigationController(rootViewController: TimerViewMainController())
+        window.makeKeyAndVisible()
+        self.window = window
+        // 알림 권한 요청
+        NotificationManager.shared.requestAuthorization { granted in
+            if granted {
+                print("알림 권한 승인")
+            } else {
+                print("알림 권한 거부")
+            }
+        }
         return true
     }
     
@@ -70,4 +83,5 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             }
         }
     }
+    
 }
