@@ -122,12 +122,13 @@ class SoundSetView: UIView, SoundSelectionDelegate {
         guard let parentViewController = self.parentViewController else { return }
         let soundSelectionVC = SoundSelectionViewController()
         soundSelectionVC.delegate = self
-        parentViewController.present(soundSelectionVC, animated: true, completion: nil)
+        let navigationController = UINavigationController(rootViewController: soundSelectionVC)
+        parentViewController.present(navigationController, animated: true, completion: nil)
     }
     
     func didSelectSound(_ sound: String) {
         selectedSound = sound
-        parentViewController?.dismiss(animated: true)
+        //parentViewController?.dismiss(animated: true)
     }
     
     func getSelectedSound() -> String {

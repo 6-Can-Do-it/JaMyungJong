@@ -80,6 +80,7 @@ extension AlarmListViewController: UITableViewDelegate, UITableViewDataSource {
             return UITableViewCell()
         }
         let alarm = AlarmListViewController.alarms[indexPath.row]
+        print(alarm)
         cell.configure(with: alarm)
         return cell
     }

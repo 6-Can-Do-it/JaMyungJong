@@ -30,32 +30,25 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     }
     
     /// 타이머 종료 알림 스케줄링
-    func scheduleNotification(withSoundName soundName: String?, after seconds: TimeInterval) {
+    func scheduleNotification(withSoundName soundName: String?, after seconds: TimeInterval, identifier: String) {
         let content = UNMutableNotificationContent()
         content.title = "자명종"
         content.body = "타이머가 종료되었습니다."
         
-        // 사용자 지정 소리 설정
         if let soundName = soundName, !soundName.isEmpty {
             content.sound = UNNotificationSound(named: UNNotificationSoundName(rawValue: "\(soundName).mp3"))
         } else {
             content.sound = UNNotificationSound(named: UNNotificationSoundName(rawValue: "Ringtone.mp3"))
         }
         
-        // Time Interval Trigger 설정
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: seconds, repeats: false)
         
-        let request = UNNotificationRequest(
-            identifier: UUID().uuidString,
-            content: content,
-            trigger: trigger
-        )
-        
+        let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
         UNUserNotificationCenter.current().add(request) { error in
             if let error = error {
-                print("알림 스케줄링 오류: \(error.localizedDescription)")
+                print("알림 스케줄링 오류: \(error)")
             } else {
-                print("알림이 성공적으로 스케줄링되었습니다.")
+                print("알림 스케줄링 성공")
             }
         }
     }
