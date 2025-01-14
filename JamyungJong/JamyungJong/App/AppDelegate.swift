@@ -12,11 +12,17 @@ import CoreData
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var window: UIWindow?
+    
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        let window = UIWindow(frame: UIScreen.main.bounds)
-        window.rootViewController = UINavigationController(rootViewController: AlarmRingViewController())
-        window.makeKeyAndVisible()
-        self.window = window
+        
+        // 윈도우 생성 및 설정
+        window = UIWindow(frame: UIScreen.main.bounds)
+        
+        // TabBarController를 루트 뷰 컨트롤러로 설정
+        let tabBarController = TabBarController()
+        window?.rootViewController = tabBarController
+        window?.makeKeyAndVisible()
+        
         return true
     }
     

@@ -29,7 +29,7 @@ class WeatherViewController: UIViewController {
         let label = UILabel()
         label.font = .systemFont(ofSize: 24, weight: .medium)
         label.textColor = .white
-        label.text = "seoul"
+        label.text = "서울"
         return label
     }()
     
@@ -91,11 +91,10 @@ class WeatherViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         configureUI()
-//        fetchCurrentWeahterData()
-//        fetchForecastData()
         setupLocationManager()
         setupLocationButton()
         checkLocationAuthorization()
+        self.hidesBottomBarWhenPushed = false
         
     }
     private func checkLocationAuthorization() {
@@ -301,7 +300,7 @@ extension WeatherViewController: CLLocationManagerDelegate {
         
         // 위치 정보로 날씨 데이터 업데이트
         updateURLQueryItems(latitude: location.coordinate.latitude,
-                          longitude: location.coordinate.longitude)
+                            longitude: location.coordinate.longitude)
         
         // 위치 이름 가져오기
         let geocoder = CLGeocoder()
@@ -344,12 +343,20 @@ extension WeatherViewController: CLLocationManagerDelegate {
             alert.addAction(settingsAction)
             alert.addAction(cancelAction)
             
-            present(alert, animated: true)
+            DispatchQueue.main.async {
+                self.present(alert, animated: true)
+            }
+            
+            // 위치 권한이 없는 경우 기본 위치(서울)의 날씨 데이터를 보여줌
+            fetchCurrentWeahterData()
+            fetchForecastData()
             
         case .notDetermined:
             locationManager.requestWhenInUseAuthorization()
         @unknown default:
-            break
+            // 기본 위치의 날씨 데이터를 보여줌
+            fetchCurrentWeahterData()
+            fetchForecastData()
         }
     }
 }
