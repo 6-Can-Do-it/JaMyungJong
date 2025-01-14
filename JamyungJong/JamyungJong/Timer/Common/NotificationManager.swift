@@ -68,7 +68,7 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         
         // 알람 시간 트리거 설정
         let calendar = Calendar.current
-        let components = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: date)
+        var components = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: date)
         let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
         
         let request = UNNotificationRequest(
