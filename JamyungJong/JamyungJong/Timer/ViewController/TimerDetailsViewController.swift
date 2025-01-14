@@ -17,6 +17,7 @@ final class TimerDetailsViewController: UIViewController {
     
     var recentTimers: [(hours: Int, minutes: Int, seconds: Int, soundName: String)] = []
     var presentTimers: [(hours: Int, minutes: Int, seconds: Int, remainingTime: Int, countdownTimer: Timer?, soundName: String)] = []
+    
     private var isTimerRunning = false
     private var isEditingMode: Bool = false
     private var selectedRows: [IndexPath] = []
