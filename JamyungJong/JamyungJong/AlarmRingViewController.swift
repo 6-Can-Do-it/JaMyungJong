@@ -25,7 +25,7 @@ import SnapKit
 import AVFoundation
 
 class AlarmRingViewController: UIViewController {
-    // MARK: - UI Elements
+
     private let currentTimeLabel: UILabel = {
         let label = UILabel()
         label.numberOfLines = 0
@@ -48,7 +48,6 @@ class AlarmRingViewController: UIViewController {
     // MARK: - Audio Player
     private var audioPlayer: AVAudioPlayer?
     
-    // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
@@ -57,7 +56,6 @@ class AlarmRingViewController: UIViewController {
         playAlarmSound() // 알람 소리 재생
     }
     
-    // MARK: - Setup
     private func setupUI() {
         view.backgroundColor = .black
         view.addSubview(currentTimeLabel)
@@ -90,7 +88,7 @@ class AlarmRingViewController: UIViewController {
         missionButton.addTarget(self, action: #selector(didTapMissionButton), for: .touchUpInside)
     }
     
-    // MARK: - Audio Playback
+   
     private func playAlarmSound() {
         guard let url = Bundle.main.url(forResource: "default_ringtone", withExtension: "mp3") else {
             print("알람 사운드 파일을 찾을 수 없습니다.")
@@ -110,12 +108,13 @@ class AlarmRingViewController: UIViewController {
         audioPlayer?.stop()
     }
     
-    // MARK: - Actions
+   
     @objc private func didTapMissionButton() {
         stopAlarmSound() // 미션 시작 시 알람 소리 정지
         let missionVC = MissionViewController()
         navigationController?.pushViewController(missionVC, animated: true)
     }
+    
     private func goToMissionViewController() {
         
     }

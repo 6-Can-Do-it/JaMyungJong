@@ -12,13 +12,16 @@ import CoreData
 final class TimerViewMainController: UIViewController {
     
     private let timerView = TimerView()
-    private var recentTimers: [(hours: Int, minutes: Int, seconds: Int)] = []
-    private var selectedTime: (hours: Int, minutes: Int, seconds: Int) = (0, 0, 0)
-    private var presentTimers: [(hours: Int, minutes: Int, seconds: Int, remainingTime: Int, countdownTimer: Timer?)] = []
+    private var recentTimers: [(hours: Int, minutes: Int, seconds: Int, soundName: String)] = []
+    private var selectedTime: (hours: Int, minutes: Int, seconds: Int, soundName: String) = (0, 0, 0, "")
+    var presentTimers: [(hours: Int, minutes: Int, seconds: Int, remainingTime: Int, countdownTimer: Timer?, soundName: String)] = []
     private var countdownTimer: Timer?
     private var remainingTime: Int = 0
-    private var selectedSound: String = "은하수"
+    private var selectedSound: String = "Arpeggio"
     private var isTimerRunning = false
+    private var isEditingMode: Bool = false
+    private var selectedRows: [IndexPath] = []
+    
 
     override func loadView() {
         view = timerView
@@ -95,7 +98,45 @@ final class TimerViewMainController: UIViewController {
     }
     
     @objc func editButtonTapped() {
+        isEditingMode.toggle()
+        selectedRows.removeAll() // 기존 선택 상태 초기화
+        timerView.recentTimersTableView.setEditing(isEditingMode, animated: true)
+
+        if isEditingMode {
+            navigationItem.leftBarButtonItem?.title = "완료"
+        } else {
+            deleteSelectedRows() // 완료 버튼 클릭 시 선택된 항목 삭제
+            navigationItem.leftBarButtonItem?.title = "편집"
+            navigationItem.rightBarButtonItem = nil
+        }
+    }
+    
+    @objc private func deleteSelectedRows() {
+        // 선택된 셀들 삭제
+        let rowsToDelete = selectedRows.sorted(by: { $0.row > $1.row }) // 역순으로 정렬
+        for indexPath in rowsToDelete {
+            let timerToDelete = recentTimers[indexPath.row]
+            let context = CoreDataManager.shared.context
+            let fetchRequest: NSFetchRequest<RecentTimerEntities> = RecentTimerEntities.fetchRequest()
+            
+            do {
+                let timers = try context.fetch(fetchRequest)
+                if let entityToDelete = timers.first(where: {
+                    Int($0.hours) == timerToDelete.hours &&
+                    Int($0.minutes) == timerToDelete.minutes &&
+                    Int($0.seconds) == timerToDelete.seconds
+                }) {
+                    CoreDataManager.shared.deleteRecentTimer(entityToDelete)
+                }
+            } catch {
+                print("Failed to delete timer: \(error)")
+            }
+            
+            recentTimers.remove(at: indexPath.row)
+        }
         
+        timerView.recentTimersTableView.deleteRows(at: rowsToDelete, with: .automatic)
+        selectedRows.removeAll()
     }
     
     private func cancelTapped() {
@@ -109,9 +150,12 @@ final class TimerViewMainController: UIViewController {
         if isTimerRunning { return }
 
         let newTimer = TimerModel(hours: selectedTime.hours, minutes: selectedTime.minutes, seconds: selectedTime.seconds)
-        presentTimers.append((newTimer.hours, newTimer.minutes, newTimer.seconds, newTimer.remainingTime, nil))
-        recentTimers.insert(selectedTime, at: 0)
-        CoreDataManager.shared.saveRecentTimer(selectedTime)
+        // `presentTimers`에 새 타이머 추가 (소리 포함)
+        presentTimers.append((newTimer.hours, newTimer.minutes, newTimer.seconds, newTimer.remainingTime, nil, selectedSound))
+        
+        // `recentTimers`에 새 타이머 추가 (소리 포함)
+        recentTimers.insert((selectedTime.hours, selectedTime.minutes, selectedTime.seconds, selectedSound), at: 0)
+        CoreDataManager.shared.saveRecentTimer((selectedTime.hours, selectedTime.minutes, selectedTime.seconds, selectedSound))
 
         let detailsVC = TimerDetailsViewController()
         detailsVC.recentTimers = recentTimers
@@ -158,18 +202,15 @@ extension TimerViewMainController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "RecentTimerCell", for: indexPath) as! RecentTimerCell
         let timer = recentTimers[indexPath.row]
-        
-        if let text = timerView.value1.text, !text.isEmpty {
-            cell.subLabel.text = text
-        } else {
-            cell.configure(hours: timer.hours, minutes: timer.minutes, seconds: timer.seconds)
-        }
-        
+
+        cell.configure(hours: timer.hours, minutes: timer.minutes, seconds: timer.seconds)
+
         cell.playButton.tag = indexPath.row
         cell.playButton.removeTarget(nil, action: nil, for: .allEvents)
         cell.playButton.addAction(UIAction { [weak self] _ in
             let selectedTimer = self?.recentTimers[cell.playButton.tag]
-            self?.selectedTime = selectedTimer ?? (0, 0, 0)
+            self?.selectedTime = (selectedTimer?.hours ?? 0, selectedTimer?.minutes ?? 0, selectedTimer?.seconds ?? 0, selectedTimer?.soundName ?? "")
+            self?.selectedSound = selectedTimer?.soundName ?? "default"
             self?.startTapped()
         }, for: .touchUpInside)
         return cell
@@ -205,6 +246,18 @@ extension TimerViewMainController: UITableViewDataSource, UITableViewDelegate {
         return "삭제"
     }
     
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        if isEditingMode {
+            selectedRows.append(indexPath)
+        }
+    }
+
+    func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath) {
+        if isEditingMode {
+            selectedRows.removeAll { $0 == indexPath }
+        }
+    }
+    
     func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
         guard !recentTimers.isEmpty else { return nil }
         return createHeaderView(title: "최근 항목")
@@ -232,5 +285,19 @@ extension TimerViewMainController: SoundSelectionDelegate {
     func didSelectSound(_ sound: String) {
         selectedSound = sound
         timerView.value2.setTitle(sound, for: .normal)
+        
+        // 현재 타이머에 소리 업데이트
+        if let currentTimerIndex = presentTimers.firstIndex(where: { $0.remainingTime == remainingTime }) {
+            presentTimers[currentTimerIndex].soundName = sound
+        }
+        
+        // 최근 타이머에도 소리 업데이트
+        if let recentTimerIndex = recentTimers.firstIndex(where: {
+            $0.hours == selectedTime.hours &&
+            $0.minutes == selectedTime.minutes &&
+            $0.seconds == selectedTime.seconds
+        }) {
+            recentTimers[recentTimerIndex].soundName = sound
+        }
     }
 }

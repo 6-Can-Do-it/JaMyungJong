@@ -10,7 +10,7 @@ import UIKit
 class SoundCell: UITableViewCell {
     let checkmarkImageView: UIImageView = {
         let imageView = UIImageView()
-        imageView.tintColor = .white
+        imageView.tintColor = SubColor.dogerBlue
         return imageView
     }()
     

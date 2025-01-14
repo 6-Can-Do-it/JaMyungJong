@@ -7,18 +7,19 @@
 
 import UIKit
 import SnapKit
+import UserNotifications
+import CoreData
 
 final class TimerDetailsViewController: UIViewController {
     
     // MARK: - Properties
     private let timerDetailsView = TimerDetailsView()
     
-    var recentTimers: [(hours: Int, minutes: Int, seconds: Int)] = []
-    var presentTimers: [(hours: Int, minutes: Int, seconds: Int, remainingTime: Int, countdownTimer: Timer?)] = [
-        (hours: 0, minutes: 0, seconds: 0, remainingTime: 0, countdownTimer: nil)
-    ]
-    
+    var recentTimers: [(hours: Int, minutes: Int, seconds: Int, soundName: String)] = []
+    var presentTimers: [(hours: Int, minutes: Int, seconds: Int, remainingTime: Int, countdownTimer: Timer?, soundName: String)] = []
     private var isTimerRunning = false
+    private var isEditingMode: Bool = false
+    private var selectedRows: [IndexPath] = []
     
     override func loadView() {
         view = timerDetailsView
@@ -50,15 +51,6 @@ final class TimerDetailsViewController: UIViewController {
         )
         editButton.setTitleTextAttributes([.foregroundColor: SubColor.dogerBlue], for: .normal)
         navigationItem.leftBarButtonItem = editButton
-        
-        let plusButton = UIBarButtonItem(
-            image: UIImage(systemName: "plus"),
-            style: .plain,
-            target: self,
-            action: #selector(plusButtonTapped)
-        )
-        plusButton.tintColor = SubColor.dogerBlue
-        navigationItem.rightBarButtonItem = plusButton
     }
     
     // MARK: - UI Setup
@@ -70,11 +62,45 @@ final class TimerDetailsViewController: UIViewController {
     }
     
     @objc func editButtonTapped() {
-        
+        isEditingMode.toggle()
+        selectedRows.removeAll() // 기존 선택 상태 초기화
+        timerDetailsView.tableView.setEditing(isEditingMode, animated: true)
+
+        if isEditingMode {
+            navigationItem.leftBarButtonItem?.title = "완료"
+        } else {
+            deleteSelectedRows() // 완료 버튼 클릭 시 선택된 항목 삭제
+            navigationItem.leftBarButtonItem?.title = "편집"
+            navigationItem.rightBarButtonItem = nil
+        }
     }
     
-    @objc func plusButtonTapped() {
+    @objc private func deleteSelectedRows() {
+        // 선택된 셀들 삭제
+        let rowsToDelete = selectedRows.sorted(by: { $0.row > $1.row }) // 역순으로 정렬
+        for indexPath in rowsToDelete {
+            let timerToDelete = recentTimers[indexPath.row]
+            let context = CoreDataManager.shared.context
+            let fetchRequest: NSFetchRequest<RecentTimerEntities> = RecentTimerEntities.fetchRequest()
+            
+            do {
+                let timers = try context.fetch(fetchRequest)
+                if let entityToDelete = timers.first(where: {
+                    Int($0.hours) == timerToDelete.hours &&
+                    Int($0.minutes) == timerToDelete.minutes &&
+                    Int($0.seconds) == timerToDelete.seconds
+                }) {
+                    CoreDataManager.shared.deleteRecentTimer(entityToDelete)
+                }
+            } catch {
+                print("Failed to delete timer: \(error)")
+            }
+            
+            recentTimers.remove(at: indexPath.row)
+        }
         
+        timerDetailsView.tableView.deleteRows(at: rowsToDelete, with: .automatic)
+        selectedRows.removeAll()
     }
     
     private func startCountdown(for index: Int) {
@@ -88,7 +114,7 @@ final class TimerDetailsViewController: UIViewController {
 
         // 타이머가 실행 중이지 않으면 타이머 시작
         guard timer.countdownTimer == nil else { return }
-
+        NotificationManager.shared.scheduleNotification(withSoundName: timer.soundName, after: TimeInterval(timer.remainingTime))
         // 개별 타이머의 countdownTimer 설정
         timer.countdownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             self?.updateCountdown(for: index)
@@ -109,13 +135,7 @@ final class TimerDetailsViewController: UIViewController {
             }
         } else {
             stopCountdown(for: index)
-            
-//            presentTimers.remove(at: index)
-//                DispatchQueue.main.async { [weak self] in
-//                    self?.timerDetailsView.tableView.deleteRows(at: [IndexPath(row: index, section: 0)], with: .fade)
-//                }
-//            }
-            
+            //NotificationManager.shared.scheduleNotification(withSoundName: timer.soundName)
             // 모든 타이머가 종료되었는지 확인
             if areAllTimersFinished() {
                 // 타이머 셀 초기화
@@ -147,6 +167,7 @@ final class TimerDetailsViewController: UIViewController {
             stopCountdown(for: index) // 타이머 정지
         }
     }
+    
 }
 
 extension TimerDetailsViewController: UITableViewDataSource, UITableViewDelegate {
@@ -160,58 +181,118 @@ extension TimerDetailsViewController: UITableViewDataSource, UITableViewDelegate
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         if indexPath.section == 0 {
-            // 첫 번째 섹션에서 TimerCell 사용
-            let cell = tableView.dequeueReusableCell(withIdentifier: "TimerCell", for: indexPath) as! TimerCell
-            let timer = presentTimers[indexPath.row]
-            let hours = timer.remainingTime / 3600
-            let minutes = (timer.remainingTime % 3600) / 60
-            let seconds = timer.remainingTime % 60
-            let progress = Float(timer.remainingTime) / Float((timer.hours * 3600) + (timer.minutes * 60) + timer.seconds)
-            cell.configure(hours: hours, minutes: minutes, seconds: seconds, progress: progress)
-            
-            // toggleTimer 클로저 연결
-            cell.toggleTimer = { [weak self] in
-                self?.toggleCountdown(for: indexPath.row)
-            }
-            return cell
+            return configureTimerCell(for: indexPath, in: tableView)
         } else {
-            // 두 번째 섹션에서 RecentTimerCell 사용
-            let cell = tableView.dequeueReusableCell(withIdentifier: "RecentTimerCell", for: indexPath) as! RecentTimerCell
-            let timer = recentTimers[indexPath.row]
-            cell.configure(hours: timer.hours, minutes: timer.minutes, seconds: timer.seconds)
-            
-            // playButton의 tag에 indexPath.row를 설정하여 해당 타이머를 선택
-            cell.playButton.tag = indexPath.row
-            cell.playButton.removeTarget(nil, action: nil, for: .allEvents)
-            cell.playButton.addAction(UIAction { [weak self] _ in
-                guard let self = self else { return }
-                
-                // 최근 타이머에서 선택된 타이머 찾기
-                let selectedTimer = self.recentTimers[cell.playButton.tag]
-                
-                // presentTimers 배열에 새 타이머 추가
-                self.presentTimers.append((hours: selectedTimer.hours, minutes: selectedTimer.minutes, seconds: selectedTimer.seconds, remainingTime: (selectedTimer.hours * 3600) + (selectedTimer.minutes * 60) + selectedTimer.seconds, countdownTimer: nil))
-                
-                // 새로운 타이머 셀을 첫 번째 섹션에 삽입
-                let indexPathForNewTimer = IndexPath(row: self.presentTimers.count - 1, section: 0)
-                self.timerDetailsView.tableView.insertRows(at: [indexPathForNewTimer], with: .automatic)
-                // 타이머 시작
-                self.startCountdown(for: self.presentTimers.count - 1)
-            }, for: .touchUpInside)
-            
-            return cell
+            return configureRecentTimerCell(for: indexPath, in: tableView)
         }
+    }
+    
+    // TimerCell 구성
+    private func configureTimerCell(for indexPath: IndexPath, in tableView: UITableView) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "TimerCell", for: indexPath) as! TimerCell
+        let timer = presentTimers[indexPath.row]
+        
+        // 시간 계산
+        let hours = timer.remainingTime / 3600
+        let minutes = (timer.remainingTime % 3600) / 60
+        let seconds = timer.remainingTime % 60
+        let totalDuration = (timer.hours * 3600) + (timer.minutes * 60) + timer.seconds
+        let progress = Float(timer.remainingTime) / Float(totalDuration)
+        
+        // 셀 구성
+        cell.configure(hours: hours, minutes: minutes, seconds: seconds, progress: progress)
+        
+        // toggleTimer 클로저 연결
+        cell.toggleTimer = { [weak self] in
+            self?.toggleCountdown(for: indexPath.row)
+        }
+        
+        return cell
+    }
+    
+    // RecentTimerCell 구성
+    private func configureRecentTimerCell(for indexPath: IndexPath, in tableView: UITableView) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "RecentTimerCell", for: indexPath) as! RecentTimerCell
+        let timer = recentTimers[indexPath.row]
+        
+        // 셀 구성
+        cell.configure(hours: timer.hours, minutes: timer.minutes, seconds: timer.seconds)
+        
+        // playButton 액션 추가
+        cell.playButton.tag = indexPath.row
+        cell.playButton.removeTarget(nil, action: nil, for: .allEvents)
+        cell.playButton.addAction(UIAction { [weak self] _ in
+            self?.handlePlayButtonTapped(for: indexPath.row)
+        }, for: .touchUpInside)
+        
+        return cell
+    }
+
+    // playButton 액션 처리
+    private func handlePlayButtonTapped(for index: Int) {
+        let selectedTimer = recentTimers[index]
+        
+        // 새 타이머 추가
+        presentTimers.append((
+            hours: selectedTimer.hours,
+            minutes: selectedTimer.minutes,
+            seconds: selectedTimer.seconds,
+            remainingTime: (selectedTimer.hours * 3600) + (selectedTimer.minutes * 60) + selectedTimer.seconds,
+            soundName: selectedTimer.soundName , countdownTimer: nil
+        ))
+        
+        // 테이블 뷰 업데이트
+        let indexPathForNewTimer = IndexPath(row: presentTimers.count - 1, section: 0)
+        timerDetailsView.tableView.insertRows(at: [indexPathForNewTimer], with: .automatic)
+        
+        // 타이머 시작
+        startCountdown(for: presentTimers.count - 1)
     }
     
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
         if editingStyle == .delete {
-            recentTimers.remove(at: indexPath.row) // 데이터 소스에서 삭제
+            if indexPath.section == 0 { // 현재 타이머 삭제
+                stopCountdown(for: indexPath.row) // 타이머 멈추기
+                presentTimers.remove(at: indexPath.row) // 데이터 소스에서 삭제
+            } else { // 최근 타이머 삭제
+                let timerToDelete = recentTimers[indexPath.row]
+                let context = CoreDataManager.shared.context
+                let fetchRequest: NSFetchRequest<RecentTimerEntities> = RecentTimerEntities.fetchRequest()
+                
+                do {
+                    let timers = try context.fetch(fetchRequest)
+                    if let entityToDelete = timers.first(where: {
+                        Int($0.hours) == timerToDelete.hours &&
+                        Int($0.minutes) == timerToDelete.minutes &&
+                        Int($0.seconds) == timerToDelete.seconds
+                    }) {
+                        CoreDataManager.shared.deleteRecentTimer(entityToDelete)
+                    }
+                } catch {
+                    print("Failed to delete timer: \(error)")
+                }
+                
+                recentTimers.remove(at: indexPath.row) // 데이터 소스에서 삭제
+            }
+            
             tableView.deleteRows(at: [indexPath], with: .automatic) // 테이블 뷰에서 삭제
         }
     }
     
     func tableView(_ tableView: UITableView, titleForDeleteConfirmationButtonForRowAt indexPath: IndexPath) -> String? {
         return "삭제"
+    }
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        if isEditingMode {
+            selectedRows.append(indexPath)
+        }
+    }
+
+    func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath) {
+        if isEditingMode {
+            selectedRows.removeAll { $0 == indexPath }
+        }
     }
     
     func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
