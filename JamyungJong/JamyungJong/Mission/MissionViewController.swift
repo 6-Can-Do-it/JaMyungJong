@@ -228,7 +228,7 @@ class MissionViewController: UIViewController {
         }
     }
     
-    // MARK: - MorningViewController로 이동
+    
     private func goToMorningViewController() {
         let morningVC = MorningViewController()
         morningVC.modalPresentationStyle = .fullScreen
@@ -244,5 +244,3 @@ class MissionViewController: UIViewController {
         }
     }
 }
-
-
