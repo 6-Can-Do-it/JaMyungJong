@@ -199,6 +199,7 @@ class SettingMainView: UIView {
             $0.trailing.equalToSuperview().inset(20)
             $0.top.equalTo(stackViewForUIView.snp.bottom).offset(50)
             $0.height.equalTo(60)
+            $0.bottom.equalToSuperview().inset(100)
         }
         
         
@@ -217,7 +218,7 @@ class SettingMainView: UIView {
 }
 
 //
-@available(iOS 17.0, *)
-#Preview {
-    UINavigationController(rootViewController: AlarmListViewController())
-}
+//@available(iOS 17.0, *)
+//#Preview {
+//    UINavigationController(rootViewController: AlarmListViewController())
+//}
