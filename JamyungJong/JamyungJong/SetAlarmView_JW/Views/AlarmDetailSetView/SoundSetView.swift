@@ -8,11 +8,18 @@
 import UIKit
 import SnapKit
 
-class SoundSetView: UIView  {
+class SoundSetView: UIView, SoundSelectionDelegate {
+    private var selectedSound: String = "기본" {
+        didSet {
+            soundListButton.setTitle(selectedSound, for: .normal)
+        }
+    }
+    
     override init(frame: CGRect) {
         super.init(frame: frame)
         basicSetUI()
         setLayout()
+        setupInitialState()
     }
     
     private func basicSetUI() {
@@ -27,9 +34,7 @@ class SoundSetView: UIView  {
     //슬라이더
     private let slider: UISlider = {
         let slider = CustomSlider()
-        //슬라이더 이미지 크기를 위한 config
         let config = UIImage.SymbolConfiguration(pointSize: 30, weight: .regular)
-        //소리를 최대음량으로 높일시 심장마비 가능성이 있다 해서 하트 이미지로 채택
         let maxImage = UIImage(systemName: "heart.slash.circle.fill", withConfiguration: config)?.withTintColor(.white, renderingMode: .alwaysOriginal)
         let minImage = UIImage(systemName: "speaker.wave.1.fill", withConfiguration: config)?.withTintColor(.white, renderingMode: .alwaysOriginal)
         slider.maximumValueImage = maxImage
@@ -37,8 +42,45 @@ class SoundSetView: UIView  {
         slider.maximumTrackTintColor = .gray
         slider.minimumTrackTintColor = SubColor.darkTurquoisePoint
         
+        // 슬라이더 초기값 및 범위 설정
+        slider.minimumValue = 0.0
+        slider.maximumValue = 1.0
+        slider.value = 0.5 // 기본값
+        
+        // 연속적인 값 변경 허용
+        slider.isContinuous = true
+        
+        // 값 변경 이벤트 추가
+        slider.addTarget(self, action: #selector(sliderValueChanged), for: .valueChanged)
+        
         return slider
     }()
+    
+    // 음량 조절을 위한 메서드
+    @objc private func sliderValueChanged(_ sender: UISlider) {
+        if uiSwitch.isOn {
+            // 볼륨값을 0.1 단위로 반올림하여 더 부드럽게 조절
+            let roundedVolume = round(sender.value * 10) / 10
+            SoundManager.shared.setVolume(roundedVolume)
+        }
+    }
+    
+    // 현재 설정된 음량 가져오기
+    func getVolume() -> Float {
+        return slider.value
+    }
+    
+    // UISwitch 토글 시 사운드 켜고 끄기
+    @objc private func switchToggled(_ sender: UISwitch) {
+        if sender.isOn {
+            slider.isEnabled = true
+            // 스위치가 켜질 때 현재 선택된 사운드로 미리듣기
+            SoundManager.shared.playSound(fromAssetsNamed: selectedSound)
+        } else {
+            slider.isEnabled = false
+            SoundManager.shared.stopSound()
+        }
+    }
     
     private let uiSwitch: UISwitch = {
         let uiSwitch = UISwitch()
@@ -77,8 +119,19 @@ class SoundSetView: UIView  {
     
     @objc
     private func soundListButtonTapped() {
-//        let soundSetVC = SoundSetDetailViewController()
-//        navigationController?.pushViewController(soundSetVC, animated: true)
+        guard let parentViewController = self.parentViewController else { return }
+        let soundSelectionVC = SoundSelectionViewController()
+        soundSelectionVC.delegate = self
+        parentViewController.present(soundSelectionVC, animated: true, completion: nil)
+    }
+    
+    func didSelectSound(_ sound: String) {
+        selectedSound = sound
+        parentViewController?.dismiss(animated: true)
+    }
+    
+    func getSelectedSound() -> String {
+        return selectedSound
     }
     
     private func setLayout() {
@@ -101,8 +154,28 @@ class SoundSetView: UIView  {
         }
     }
     
+    private func setupInitialState() {
+        // 초기 상태 설정
+        uiSwitch.addTarget(self, action: #selector(switchToggled), for: .valueChanged)
+        slider.isEnabled = uiSwitch.isOn
+    }
+    
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+}
+
+// UIView의 부모 뷰 컨트롤러를 찾기 위한 확장
+extension UIView {
+    var parentViewController: UIViewController? {
+        var parentResponder: UIResponder? = self
+        while let nextResponder = parentResponder?.next {
+            parentResponder = nextResponder
+            if let viewController = parentResponder as? UIViewController {
+                return viewController
+            }
+        }
+        return nil
     }
 }
 
@@ -114,10 +187,7 @@ class CustomSlider: UISlider {
         return newBounds
     }
 }
-
 @available(iOS 17.0, *)
 #Preview {
-    SetAlarmViewController()
+    UINavigationController(rootViewController: AlarmListViewController())
 }
-
-
