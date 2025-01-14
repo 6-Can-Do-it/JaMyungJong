@@ -18,7 +18,7 @@ class TabBarController: UITabBarController {
     
     private func setupViewControllers() {
         // 각 탭의 뷰컨트롤러 생성
-        let alarmVC = SetAlarmViewController()
+        let alarmVC = AlarmListViewController()
         let morningVC = MorningViewController()
         let timerVC = TimerViewMainController()
         let stopwatchVC = StopWatchViewController()
