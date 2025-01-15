@@ -94,6 +94,7 @@ extension AlarmListViewController: UITableViewDelegate, UITableViewDataSource {
         }
         let alarm = alarms[indexPath.row]
         cell.configure(with: alarm)
+        NotificationManager.shared.scheduleAlarmNotification(alarmData: alarm)
         return cell
     }
     

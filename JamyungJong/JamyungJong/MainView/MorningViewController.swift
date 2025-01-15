@@ -112,6 +112,7 @@ class MorningViewController: UIViewController {
         setupConstraints()
         setupLocationManager()
         setupGradientBackground()
+        self.navigationController?.setNavigationBarHidden(true, animated: true)
         
         DispatchQueue.main.async {
             self.setupLocationManager()

@@ -105,23 +105,29 @@ final class TimerDetailsViewController: UIViewController {
     }
     
     private func startCountdown(for index: Int) {
-        // 타이머에 해당하는 remainingTime 초기화
         var timer = presentTimers[index]
         
-        // 남은 시간이 0이라면 초기화
         if timer.remainingTime == 0 {
             timer.remainingTime = (timer.hours * 3600) + (timer.minutes * 60) + timer.seconds
         }
-
-        // 타이머가 실행 중이지 않으면 타이머 시작
+        
         guard timer.countdownTimer == nil else { return }
-        NotificationManager.shared.scheduleNotification(withSoundName: timer.soundName, after: TimeInterval(timer.remainingTime))
-        // 개별 타이머의 countdownTimer 설정
+        
+        // 고유 식별자를 생성
+        let notificationIdentifier = "\(index)_\(timer.soundName)"
+        
+        // Notification 생성
+        NotificationManager.shared.scheduleNotification(
+            withSoundName: timer.soundName,
+            after: TimeInterval(timer.remainingTime),
+            identifier: notificationIdentifier
+        )
+        
+        // 타이머 시작
         timer.countdownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             self?.updateCountdown(for: index)
         }
-
-        // presentTimers 배열에 업데이트된 타이머 저장
+        
         presentTimers[index] = timer
     }
 
@@ -158,6 +164,10 @@ final class TimerDetailsViewController: UIViewController {
         var timer = presentTimers[index]
         timer.countdownTimer?.invalidate() // 타이머 멈추기
         timer.countdownTimer = nil // 타이머 해제
+        
+        let notificationIdentifier = "\(index)_\(timer.soundName)" // 고유 식별자
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [notificationIdentifier])
+        
         presentTimers[index] = timer  // 배열에 업데이트된 타이머 저장
     }
 

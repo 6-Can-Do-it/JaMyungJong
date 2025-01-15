@@ -14,6 +14,7 @@ class TabBarController: UITabBarController {
         setupViewControllers()
         setupTabBarAppearance()
         selectedIndex = 0
+        self.navigationController?.setNavigationBarHidden(true, animated: true)
     }
     
     private func setupViewControllers() {

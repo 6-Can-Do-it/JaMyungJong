@@ -10,7 +10,7 @@ import CoreData
 import UserNotifications
 
 @main
-class AppDelegate: UIResponder, UIApplicationDelegate {
+class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterDelegate {
 
     var window: UIWindow?
     
@@ -36,6 +36,19 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 print("알림 권한 거부")
             }
         }
+        
+//        func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
+//            guard let navigationController = window.rootViewController as? UINavigationController else {
+//                completionHandler()
+//                return
+//            }
+//            
+//            NotificationManager.shared.handleAlarmTrigger(navigationController: navigationController)
+//            completionHandler()
+//        }
+//        
+//        UNUserNotificationCenter.current().delegate = self
+        
         return true
     }
     
