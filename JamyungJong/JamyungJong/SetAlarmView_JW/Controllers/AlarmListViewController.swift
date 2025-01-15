@@ -8,7 +8,7 @@
 import UIKit
 
 class AlarmListViewController: UIViewController {
-    static var alarms: [AlarmData] = []
+     var alarms: [AlarmData] = []
     
     private lazy var tableView: UITableView = {
         let tv = UITableView()
@@ -44,7 +44,15 @@ class AlarmListViewController: UIViewController {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        loadSavedAlarms()
         tableView.reloadData()
+    }
+    
+    private func loadSavedAlarms() {
+        if let savedData = UserDefaults.standard.data(forKey: "savedAlarms"),
+           let decodedAlarms = try? JSONDecoder().decode([AlarmData].self, from: savedData) {
+            alarms = decodedAlarms
+        }
     }
     
     private func setupUI() {
@@ -66,20 +74,25 @@ class AlarmListViewController: UIViewController {
     }
     
     func addAlarm(_ alarm: AlarmData) {
-        AlarmListViewController.alarms.append(alarm)
+        alarms.append(alarm)
+        
+        if let encoded = try? JSONEncoder().encode(alarms) {
+            UserDefaults.standard.set(encoded, forKey: "savedAlarms")
+        }
+        
         tableView.reloadData()
     }
 }
 extension AlarmListViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        AlarmListViewController.alarms.count
+        return alarms.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let cell = tableView.dequeueReusableCell(withIdentifier: "AlarmCell", for: indexPath) as? AlarmCell else {
             return UITableViewCell()
         }
-        let alarm = AlarmListViewController.alarms[indexPath.row]
+        let alarm = alarms[indexPath.row]
         cell.configure(with: alarm)
         NotificationManager.shared.scheduleAlarmNotification(alarmData: alarm)
         return cell
@@ -90,7 +103,7 @@ extension AlarmListViewController: UITableViewDelegate, UITableViewDataSource {
     }
 }
 
-@available(iOS 17.0, *)
-#Preview {
-    UINavigationController(rootViewController: AlarmListViewController())
-}
+//@available(iOS 17.0, *)
+//#Preview {
+//    UINavigationController(rootViewController: AlarmListViewController())
+//}

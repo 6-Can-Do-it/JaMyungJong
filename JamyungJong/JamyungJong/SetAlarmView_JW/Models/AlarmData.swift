@@ -8,8 +8,11 @@
 import Foundation
 
 // 알람 데이터 모델
-struct AlarmData {
+//JSON형 으로 변환하기 위한 Codable 채택
+struct AlarmData: Codable {
     let time: Date
     let repeatDays: [Bool]
     let isEnabled: Bool
+    let sound: String
+    let label: String
 }
