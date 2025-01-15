@@ -80,8 +80,8 @@ extension AlarmListViewController: UITableViewDelegate, UITableViewDataSource {
             return UITableViewCell()
         }
         let alarm = AlarmListViewController.alarms[indexPath.row]
-        print(alarm)
         cell.configure(with: alarm)
+        NotificationManager.shared.scheduleAlarmNotification(alarmData: alarm)
         return cell
     }
     

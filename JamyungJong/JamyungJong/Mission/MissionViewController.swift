@@ -23,6 +23,7 @@ class MissionViewController: UIViewController {
         setupUI()
         generateQuestions() // 문제 생성
         loadQuestion()
+        self.navigationController?.setNavigationBarHidden(true, animated: true)
     }
     
     private func setupUI() {
@@ -228,11 +229,15 @@ class MissionViewController: UIViewController {
         }
     }
     
-    
     private func goToMorningViewController() {
-        let morningVC = MorningViewController()
-        morningVC.modalPresentationStyle = .fullScreen
-        present(morningVC, animated: true, completion: nil)
+        let morningVC = TabBarController()
+        
+        // 원하는 탭 인덱스 설정 (예: 인덱스 1번)
+        morningVC.selectedIndex = 1
+        
+        // 네비게이션 컨트롤러를 통해 화면 이동
+        navigationController?.pushViewController(morningVC, animated: true)
+        //present(morningVC, animated: true, completion: nil)
     }
     
     @objc private func goBack() {

@@ -92,7 +92,7 @@ final class TimerView: UIView {
 
     let value2: UIButton = {
         var configuration = UIButton.Configuration.plain()
-        configuration.title = "Arpeggio"
+        configuration.title = "Breaking"
         configuration.baseForegroundColor = SubColor.darkTurquoisePoint
         configuration.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
         configuration.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
