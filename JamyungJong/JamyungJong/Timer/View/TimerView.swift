@@ -92,7 +92,7 @@ final class TimerView: UIView {
 
     let value2: UIButton = {
         var configuration = UIButton.Configuration.plain()
-        configuration.title = "은하수"
+        configuration.title = "Breaking"
         configuration.baseForegroundColor = SubColor.darkTurquoisePoint
         configuration.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
         configuration.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
@@ -184,7 +184,7 @@ final class TimerView: UIView {
         
         recentTimersTableView.snp.makeConstraints { make in
             make.top.equalTo(containerView.snp.bottom).offset(24)
-            make.left.right.bottom.equalToSuperview().inset(20)
+            make.left.right.bottom.equalToSuperview()
         }
     }
 }

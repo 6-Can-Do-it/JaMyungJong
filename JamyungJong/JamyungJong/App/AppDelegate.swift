@@ -7,16 +7,48 @@
 
 import UIKit
 import CoreData
+import UserNotifications
 
 @main
-class AppDelegate: UIResponder, UIApplicationDelegate {
+class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterDelegate {
 
     var window: UIWindow?
+    
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        
+        // 윈도우 생성 및 설정
+        window = UIWindow(frame: UIScreen.main.bounds)
+        
+        // TabBarController를 루트 뷰 컨트롤러로 설정
+        let tabBarController = TabBarController()
+        window?.rootViewController = tabBarController
+        window?.makeKeyAndVisible()
+        
         let window = UIWindow(frame: UIScreen.main.bounds)
-        window.rootViewController = UINavigationController(rootViewController: MainViewController())
+        window.rootViewController = UINavigationController(rootViewController: TabBarController())
         window.makeKeyAndVisible()
         self.window = window
+        // 알림 권한 요청
+        NotificationManager.shared.requestAuthorization { granted in
+            if granted {
+                print("알림 권한 승인")
+            } else {
+                print("알림 권한 거부")
+            }
+        }
+        
+//        func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
+//            guard let navigationController = window.rootViewController as? UINavigationController else {
+//                completionHandler()
+//                return
+//            }
+//            
+//            NotificationManager.shared.handleAlarmTrigger(navigationController: navigationController)
+//            completionHandler()
+//        }
+//        
+//        UNUserNotificationCenter.current().delegate = self
+        
         return true
     }
     
@@ -64,4 +96,5 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             }
         }
     }
+    
 }

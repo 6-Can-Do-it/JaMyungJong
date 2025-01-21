@@ -59,7 +59,7 @@ final class RecentTimerCell: UITableViewCell {
         
         mainLabel.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(10)
-            make.leading.equalToSuperview()
+            make.leading.equalToSuperview().offset(16)
         }
         
         subLabel.snp.makeConstraints { make in

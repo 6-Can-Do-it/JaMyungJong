@@ -14,7 +14,6 @@ struct Sound {
 
 struct SoundLibrary {
     static let sounds: [Sound] = [
-        Sound(name: "Arpeggio", fileName: "Arpeggio"),
         Sound(name: "Breaking", fileName: "Breaking"),
         Sound(name: "Canopy", fileName: "Canopy"),
         Sound(name: "Chalet", fileName: "Chalet"),
@@ -26,10 +25,7 @@ struct SoundLibrary {
         Sound(name: "Kettle", fileName: "Kettle"),
         Sound(name: "Mercury", fileName: "Mercury"),
         Sound(name: "Milky Way", fileName: "Milky Way"),
-        Sound(name: "Quad", fileName: "Quad"),
-        Sound(name: "Radial", fileName: "Radial"),
-        Sound(name: "Reflection", fileName: "Reflection"),
-        Sound(name: "Scavenger", fileName: "Scavenger"),
+        Sound(name: "Ringtone", fileName: "Ringtone"),
         Sound(name: "Seedling", fileName: "Seedling"),
         Sound(name: "Shelter", fileName: "Shelter"),
         Sound(name: "Sprinkles", fileName: "Sprinkles"),

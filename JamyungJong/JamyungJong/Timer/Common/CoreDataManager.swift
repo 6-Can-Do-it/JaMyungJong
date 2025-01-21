@@ -11,7 +11,7 @@ import UIKit
 class CoreDataManager {
     static let shared = CoreDataManager()
     
-    var recentTimers: [(hours: Int, minutes: Int, seconds: Int)] = []
+    var recentTimers: [(hours: Int, minutes: Int, seconds: Int, soundName: String)] = []
     
     private init() {}
     
@@ -21,7 +21,7 @@ class CoreDataManager {
             if let error = error as NSError? {
                 fatalError("Unresolved error \(error), \(error.userInfo)")
             }
-        }
+        }//
         return container
     }()
     
@@ -40,14 +40,19 @@ class CoreDataManager {
         }
     }
     
-    func saveRecentTimer(_ timer: (hours: Int, minutes: Int, seconds: Int)) {
-        let context = CoreDataManager.shared.context
-        let newTimer = RecentTimerEntities(context: context)
-        newTimer.hours = Int32(timer.hours)
-        newTimer.minutes = Int32(timer.minutes)
-        newTimer.seconds = Int32(timer.seconds)
+    func saveRecentTimer(_ timer: (hours: Int, minutes: Int, seconds: Int, soundName: String)) {
+        let context = persistentContainer.viewContext
+        let entity = RecentTimerEntities(context: context)
+        entity.hours = Int32(timer.hours)
+        entity.minutes = Int32(timer.minutes)
+        entity.seconds = Int32(timer.seconds)
+        entity.soundName = timer.soundName
 
-        CoreDataManager.shared.saveContext()
+        do {
+            try context.save()
+        } catch {
+            print("Failed to save timer: \(error)")
+        }
     }
     
     func loadRecentTimers() {
@@ -55,10 +60,12 @@ class CoreDataManager {
         let fetchRequest: NSFetchRequest<RecentTimerEntities> = RecentTimerEntities.fetchRequest()
 
         do {
-            let timers = try context.fetch(fetchRequest)
-            recentTimers = timers.map { (hours: Int($0.hours), minutes: Int($0.minutes), seconds: Int($0.seconds)) }
+            let fetchedTimers = try context.fetch(fetchRequest)
+            recentTimers = fetchedTimers.map {
+                (hours: Int($0.hours), minutes: Int($0.minutes), seconds: Int($0.seconds), soundName: $0.soundName ?? "defaults")
+            }
         } catch {
-            print("Failed to fetch timers: \(error)")
+            print("Failed to load recent timers: \(error)")
         }
     }
     

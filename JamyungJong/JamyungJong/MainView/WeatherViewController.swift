@@ -7,12 +7,16 @@
 
 import UIKit
 import SnapKit
+import CoreLocation
 
 class WeatherViewController: UIViewController {
     
+    private let locationManager = CLLocationManager()
+    private var currentLocation: CLLocation?
+    
     private var dataSource = [ForecastWeather]()
     
-    private let urlQueryItems: [URLQueryItem] = [
+    private var urlQueryItems: [URLQueryItem] = [
         URLQueryItem(name: "lat", value: "37.5" ),
         URLQueryItem(name: "lon", value: "126.9"),
         URLQueryItem(name: "appid", value: "d5c109a965afc245d1fe602487dac034"),
@@ -25,7 +29,7 @@ class WeatherViewController: UIViewController {
         let label = UILabel()
         label.font = .systemFont(ofSize: 24, weight: .medium)
         label.textColor = .white
-        label.text = "seoul"
+        label.text = "서울"
         return label
     }()
     
@@ -76,14 +80,37 @@ class WeatherViewController: UIViewController {
         return tableView
     }()
     
+    private let locationButton: UIButton = {
+        let button = UIButton()
+        button.setImage(UIImage(systemName: "location.circle"), for: .normal)
+        button.tintColor = .white
+        return button
+    }()
+    
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
         configureUI()
-        fetchCurrentWeahterData()
-        fetchForecastData()
+        setupLocationManager()
+        setupLocationButton()
+        checkLocationAuthorization()
+        self.hidesBottomBarWhenPushed = false
         
     }
+    private func checkLocationAuthorization() {
+        switch locationManager.authorizationStatus {
+        case .authorizedWhenInUse, .authorizedAlways:
+            locationManager.requestLocation()
+        case .denied, .restricted, .notDetermined:
+            // 위치 권한이 없는 경우 기본 위치(서울)의 날씨 데이터를 보여줌
+            fetchCurrentWeahterData()
+            fetchForecastData()
+        @unknown default:
+            fetchCurrentWeahterData()
+            fetchForecastData()
+        }
+    }
+    
     
     private func  fetchData<T: Decodable>(url: URL, completion: @escaping (T?) -> Void) {
         let session = URLSession(configuration: .default)
@@ -158,6 +185,8 @@ class WeatherViewController: UIViewController {
             }
         }
     }
+    
+    
     private func configureUI() {
             view.backgroundColor = .black
             [
@@ -165,7 +194,8 @@ class WeatherViewController: UIViewController {
                 temperatureLabel,
                 tempStackView,
                 weatherIconImageView,
-                tableView
+                tableView,
+                locationButton
             ].forEach { view.addSubview($0) }
             
             [
@@ -200,26 +230,133 @@ class WeatherViewController: UIViewController {
             make.leading.trailing.equalToSuperview().inset(20)
             make.bottom.equalToSuperview().inset(50)
         }
+        
+        locationButton.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide).offset(20)
+            make.trailing.equalToSuperview().inset(20)
+            make.width.height.equalTo(44)
         }
+        }
+    
+    private func setupLocationManager() {
+        locationManager.delegate = self
+        locationManager.desiredAccuracy = kCLLocationAccuracyBest
+        locationManager.requestWhenInUseAuthorization()
     }
+    
+    private func setupLocationButton() {
+        locationButton.addTarget(self, action: #selector(locationButtonTapped), for: .touchUpInside)
+    }
+    
+    @objc private func locationButtonTapped() {
+        locationManager.requestLocation()
+    }
+    
+    // URL 쿼리 아이템 업데이트 메서드
+    private func updateURLQueryItems(latitude: Double, longitude: Double) {
+        let newQueryItems: [URLQueryItem] = [
+            URLQueryItem(name: "lat", value: String(latitude)),
+            URLQueryItem(name: "lon", value: String(longitude)),
+            URLQueryItem(name: "appid", value: "d5c109a965afc245d1fe602487dac034"),
+            URLQueryItem(name: "units", value: "metric")
+        ]
+        self.urlQueryItems = newQueryItems
+        
+        // 새로운 위치로 날씨 데이터 업데이트
+        fetchCurrentWeahterData()
+        fetchForecastData()
+    }
+}
+    
+
+
+
+
 
 extension WeatherViewController: UITableViewDelegate {
-    // 테이블 뷰 셀의 높이 크기 지정.
+
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         40
     }
 }
 
 extension WeatherViewController: UITableViewDataSource {
-    // 테이블 뷰의 indexPath 마다 테이블 셀 지정.
-    // indexPath = 테이블 뷰의 행과 섹션을 지정. 여기서 섹션은 사용하지 않고 행만 사용함.
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let cell = tableView.dequeueReusableCell(withIdentifier: TableViewCell.id) as? TableViewCell else { return UITableViewCell() }
         cell.configureCell(forecastWeather: dataSource[indexPath.row])
         return cell
     }
-    // 테이블 뷰 섹션에 행이 몇 개 들어가는가. 여기서 섹션은 없으니 그냥 총 행 개수를 입력하면 된다.
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         dataSource.count
+    }
+}
+
+
+// Location Manager Delegate 확장
+extension WeatherViewController: CLLocationManagerDelegate {
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        guard let location = locations.last else { return }
+        currentLocation = location
+        
+        // 위치 정보로 날씨 데이터 업데이트
+        updateURLQueryItems(latitude: location.coordinate.latitude,
+                            longitude: location.coordinate.longitude)
+        
+        // 위치 이름 가져오기
+        let geocoder = CLGeocoder()
+        geocoder.reverseGeocodeLocation(location) { [weak self] placemarks, error in
+            guard let self = self,
+                  let placemark = placemarks?.first else { return }
+            
+            DispatchQueue.main.async {
+                if let city = placemark.locality {
+                    self.cityLabel.text = city
+                }
+            }
+        }
+    }
+    
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        print("위치 정보 획득 실패: \(error.localizedDescription)")
+    }
+    
+    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        switch manager.authorizationStatus {
+        case .authorizedWhenInUse, .authorizedAlways:
+            locationManager.requestLocation()
+        case .denied, .restricted:
+            // 알림창으로 설정 화면으로 이동하도록 안내
+            let alert = UIAlertController(
+                title: "위치 권한 필요",
+                message: "날씨 정보를 얻기 위해 위치 권한이 필요합니다. 설정에서 권한을 허용해주세요.",
+                preferredStyle: .alert
+            )
+            
+            let settingsAction = UIAlertAction(title: "설정으로 이동", style: .default) { _ in
+                if let settingsURL = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(settingsURL)
+                }
+            }
+            
+            let cancelAction = UIAlertAction(title: "취소", style: .cancel)
+            
+            alert.addAction(settingsAction)
+            alert.addAction(cancelAction)
+            
+            DispatchQueue.main.async {
+                self.present(alert, animated: true)
+            }
+            
+            // 위치 권한이 없는 경우 기본 위치(서울)의 날씨 데이터를 보여줌
+            fetchCurrentWeahterData()
+            fetchForecastData()
+            
+        case .notDetermined:
+            locationManager.requestWhenInUseAuthorization()
+        @unknown default:
+            // 기본 위치의 날씨 데이터를 보여줌
+            fetchCurrentWeahterData()
+            fetchForecastData()
+        }
     }
 }

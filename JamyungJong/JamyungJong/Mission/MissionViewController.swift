@@ -23,11 +23,12 @@ class MissionViewController: UIViewController {
         setupUI()
         generateQuestions() // 문제 생성
         loadQuestion()
+        self.navigationController?.setNavigationBarHidden(true, animated: true)
     }
     
     private func setupUI() {
         view.backgroundColor = .black
-
+        
         // 네비게이션 바 설정
         navigationItem.leftBarButtonItem = UIBarButtonItem(
             title: "<",
@@ -36,7 +37,7 @@ class MissionViewController: UIViewController {
             action: #selector(goBack)
         )
         navigationItem.leftBarButtonItem?.tintColor = .white
-
+        
         // Progress Label
         progressLabel.textColor = .white
         progressLabel.font = .systemFont(ofSize: 18, weight: .medium)
@@ -46,17 +47,17 @@ class MissionViewController: UIViewController {
             make.top.equalTo(view.safeAreaLayoutGuide).offset(10)
             make.centerX.equalToSuperview()
         }
-
+        
         // Question Label
         questionLabel.textColor = .white
         questionLabel.font = .boldSystemFont(ofSize: 48)
         questionLabel.textAlignment = .center
         view.addSubview(questionLabel)
         questionLabel.snp.makeConstraints { make in
-            make.top.equalTo(progressLabel.snp.bottom).offset(20)
+            make.top.equalTo(progressLabel.snp.bottom).offset(100)
             make.centerX.equalToSuperview()
         }
-
+        
         // Input Label
         inputLabel.textColor = .white
         inputLabel.font = .boldSystemFont(ofSize: 36)
@@ -66,19 +67,19 @@ class MissionViewController: UIViewController {
         inputLabel.clipsToBounds = true
         view.addSubview(inputLabel)
         inputLabel.snp.makeConstraints { make in
-            make.top.equalTo(questionLabel.snp.bottom).offset(30)
+            make.top.equalTo(questionLabel.snp.bottom).offset(50)
             make.centerX.equalToSuperview()
             make.width.equalTo(200)
             make.height.equalTo(60)
         }
-
+        
         // Button Stack View
         verticalStackView.axis = .vertical
         verticalStackView.spacing = 10
         verticalStackView.distribution = .fillEqually
         view.addSubview(verticalStackView)
         verticalStackView.snp.makeConstraints { make in
-            make.top.equalTo(inputLabel.snp.bottom).offset(40)
+            make.top.equalTo(inputLabel.snp.bottom).offset(150)
             make.centerX.equalToSuperview()
             make.width.equalTo(350)
             make.height.equalTo(350)
@@ -86,7 +87,7 @@ class MissionViewController: UIViewController {
         
         setupButtons()
     }
-
+    
     private func setupButtons() {
         let numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9]
         var numberIndex = 0
@@ -128,7 +129,7 @@ class MissionViewController: UIViewController {
             verticalStackView.addArrangedSubview(horizontalStackView)
         }
     }
-
+    
     private func generateQuestions() {
         questions = QuestionGenerator.generateRandomQuestions(count: 3) // 임의의 문제 3개 생성
     }
@@ -145,7 +146,7 @@ class MissionViewController: UIViewController {
         inputLabel.text = ""
         inputLabel.backgroundColor = .darkGray
     }
-
+    
     @objc private func buttonTapped(_ sender: UIButton) {
         if sender.tag == -1 { // Clear 버튼
             userAnswer = ""
@@ -159,7 +160,7 @@ class MissionViewController: UIViewController {
             }
         }
     }
-
+    
     private func submitAnswer() {
         guard let answer = Int(userAnswer) else { return }
         
@@ -184,13 +185,13 @@ class MissionViewController: UIViewController {
             }
         }
     }
-
+    
     private func showCompletionScreen() {
         questionLabel.isHidden = true
         progressLabel.isHidden = true
         inputLabel.isHidden = true
         verticalStackView.isHidden = true
-
+        
         // 이모티콘 이미지 추가
         let emojiImageView = UIImageView()
         emojiImageView.contentMode = .scaleAspectFit
@@ -198,9 +199,9 @@ class MissionViewController: UIViewController {
         emojiImageView.snp.makeConstraints { make in
             make.centerX.equalToSuperview()
             make.centerY.equalToSuperview().offset(-120)
-            make.width.height.equalTo(100)
+            make.width.height.equalTo(400)
         }
-
+        
         // 메시지 레이블 추가
         let messageLabel = UILabel()
         messageLabel.textColor = .white
@@ -211,18 +212,34 @@ class MissionViewController: UIViewController {
             make.centerX.equalToSuperview()
             make.top.equalTo(emojiImageView.snp.bottom).offset(20)
         }
-
+        
         // 초기 화면 (참 잘했어요!)
         emojiImageView.image = UIImage(named: "ddaBong")
         messageLabel.text = "참 잘했어요!"
-
+        
         // 2초 후 변경 (오늘 아침도 활기차게!)
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
             emojiImageView.image = UIImage(named: "sun")
             messageLabel.text = "오늘 아침도 활기차게!"
+            
+            // 1초 후 MorningViewController로 전환
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                self.goToMorningViewController()
+            }
         }
     }
-
+    
+    private func goToMorningViewController() {
+        let morningVC = TabBarController()
+        
+        // 원하는 탭 인덱스 설정 (예: 인덱스 1번)
+        morningVC.selectedIndex = 1
+        
+        // 네비게이션 컨트롤러를 통해 화면 이동
+        navigationController?.pushViewController(morningVC, animated: true)
+        //present(morningVC, animated: true, completion: nil)
+    }
+    
     @objc private func goBack() {
         if currentQuestionIndex > 0 {
             currentQuestionIndex -= 1 // 이전 문제로 돌아감
